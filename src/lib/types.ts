@@ -31,4 +31,6 @@ export type ServiceJob = {
     payment: {
         status: PaymentStatus;
     };
+    isRepeat: boolean;
+    intakeDate: string; // ISO string
 };

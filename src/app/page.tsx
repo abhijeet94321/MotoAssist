@@ -2,17 +2,19 @@
 
 import { useState } from 'react';
 import type { ServiceJob } from '@/lib/types';
-import ServiceDashboard from '@/components/moto-assist/service-dashboard';
+import Dashboard from '@/components/moto-assist/dashboard';
+import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Wrench } from 'lucide-react';
+import { PlusCircle, Wrench, LayoutDashboard, List } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type View = 'dashboard' | 'new_service' | 'update_status' | 'billing';
+type View = 'main' | 'new_service' | 'update_status' | 'billing';
 
 export default function Home() {
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
 
@@ -22,15 +24,21 @@ export default function Home() {
   };
   
   const handleIntakeSubmit = (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment'>) => {
+    const isRepeatCustomer = serviceJobs.some(
+      (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
+    );
+
     const newJob: ServiceJob = {
       id: crypto.randomUUID(),
       ...data,
       status: 'Service Required',
       serviceItems: [],
       payment: { status: 'Pending' },
+      isRepeat: isRepeatCustomer,
+      intakeDate: new Date().toISOString(),
     };
     setServiceJobs(prev => [...prev, newJob]);
-    setView('dashboard');
+    setView('main');
   };
 
   const handleUpdateStatusClick = (job: ServiceJob) => {
@@ -49,7 +57,7 @@ export default function Home() {
           setActiveJob(updatedJob);
           setView('billing');
         } else {
-          setView('dashboard');
+          setView('main');
         }
         return updatedJob;
       }
@@ -68,11 +76,11 @@ export default function Home() {
         }
         return job;
      }));
-     setView('dashboard');
+     setView('main');
   };
 
-  const handleBackToDashboard = () => {
-    setView('dashboard');
+  const handleBackToMain = () => {
+    setView('main');
     setActiveJob(null);
   };
 
@@ -82,7 +90,7 @@ export default function Home() {
         return (
           <ServiceIntakeForm
             onSubmit={handleIntakeSubmit}
-            onBack={handleBackToDashboard}
+            onBack={handleBackToMain}
           />
         );
       case 'update_status':
@@ -91,7 +99,7 @@ export default function Home() {
             <ServiceStatusUpdater
               job={activeJob}
               onUpdate={handleStatusUpdate}
-              onBack={handleBackToDashboard}
+              onBack={handleBackToMain}
             />
           );
         }
@@ -103,17 +111,29 @@ export default function Home() {
               job={activeJob}
               onPaymentUpdate={handlePaymentUpdate}
               onBack={() => handleUpdateStatusClick(activeJob)}
+              onPendingBill={handleBackToMain}
             />
           );
         }
         return null;
-      case 'dashboard':
+      case 'main':
       default:
         return (
-          <ServiceDashboard
-            jobs={serviceJobs}
-            onUpdateStatusClick={handleUpdateStatusClick}
-          />
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
+              <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing Services</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dashboard">
+              <Dashboard jobs={serviceJobs} />
+            </TabsContent>
+            <TabsContent value="jobs">
+               <ServiceJobsList
+                jobs={serviceJobs}
+                onUpdateStatusClick={handleUpdateStatusClick}
+              />
+            </TabsContent>
+          </Tabs>
         );
     }
   };
@@ -135,7 +155,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-           {view === 'dashboard' && (
+           {view === 'main' && (
              <Button onClick={handleNewServiceClick}>
                <PlusCircle className="mr-2 h-4 w-4" /> New Service
              </Button>

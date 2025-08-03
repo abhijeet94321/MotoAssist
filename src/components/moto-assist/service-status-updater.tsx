@@ -23,8 +23,10 @@ import {
   ArrowRight,
   Bike,
   User,
+  MessageSquare,
 } from "lucide-react";
 import ServiceLogger from "./service-logger";
+import { useToast } from "@/hooks/use-toast";
 
 type ServiceStatusUpdaterProps = {
   job: ServiceJob;
@@ -38,17 +40,50 @@ const nextStatusMap: Partial<Record<ServiceStatus, ServiceStatus>> = {
     'Completed': 'Billed',
 };
 
+const statusUpdateTextMap: Partial<Record<ServiceStatus, string>> = {
+    'In Progress': 'Hi {userName}, work has started on your vehicle ({vehicleModel}). We will keep you updated.',
+    'Completed': 'Hi {userName}, the service on your vehicle ({vehicleModel}) is complete. We will share the bill with you shortly for payment.',
+    'Billed': 'Hi {userName}, your bill for the service on your vehicle ({vehicleModel}) is ready. Please proceed with the payment.',
+};
+
 
 export default function ServiceStatusUpdater({
   job,
   onUpdate,
   onBack,
 }: ServiceStatusUpdaterProps) {
+    const { toast } = useToast();
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
 
     const handleUpdate = () => {
         onUpdate(job.id, currentStatus, serviceItems);
+    }
+
+    const handleShareUpdate = () => {
+        let message = statusUpdateTextMap[currentStatus];
+        if (!message) {
+            toast({
+                title: "No Update Message",
+                description: "There is no pre-defined message for this status.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        message = message.replace('{userName}', job.vehicleDetails.userName)
+                         .replace('{vehicleModel}', job.vehicleDetails.vehicleModel);
+        
+        const encodedText = encodeURIComponent(message);
+        const mobileNumber = job.vehicleDetails.mobile.replace(/\D/g, '');
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
+        
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        
+        toast({
+          title: "Update Ready to Share",
+          description: "Your WhatsApp application has been opened to share the status update.",
+        });
     }
 
     const handleProceed = () => {
@@ -82,20 +117,27 @@ export default function ServiceStatusUpdater({
                 <h3 className="font-semibold mb-2">Initial Request</h3>
                 <p className="text-sm text-muted-foreground">{job.initialServiceRequest}</p>
             </div>
-            <div>
-                <h3 className="font-semibold mb-2">Current Status</h3>
-                 <Select onValueChange={(v) => setCurrentStatus(v as ServiceStatus)} value={currentStatus}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Update status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Service Required">Service Required</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Billed" disabled>Billed</SelectItem>
-                        <SelectItem value="Cycle Complete" disabled>Cycle Complete</SelectItem>
-                    </SelectContent>
-                </Select>
+            <div className="space-y-2">
+                <h3 className="font-semibold">Current Status</h3>
+                 <div className="flex gap-2">
+                    <Select onValueChange={(v) => setCurrentStatus(v as ServiceStatus)} value={currentStatus}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Update status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Service Required">Service Required</SelectItem>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Billed" disabled>Billed</SelectItem>
+                            <SelectItem value="Cycle Complete" disabled>Cycle Complete</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {statusUpdateTextMap[currentStatus] && (
+                         <Button variant="outline" size="icon" onClick={handleShareUpdate} aria-label="Share status update">
+                            <MessageSquare className="h-5 w-5"/>
+                        </Button>
+                    )}
+                 </div>
             </div>
         </div>
         
@@ -110,7 +152,7 @@ export default function ServiceStatusUpdater({
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Main
         </Button>
         <div className="flex gap-2">
             <Button variant="secondary" onClick={handleUpdate}>Save Changes</Button>

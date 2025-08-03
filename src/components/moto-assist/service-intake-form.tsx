@@ -190,7 +190,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData }: Ser
           </CardContent>
           <CardFooter className="flex justify-between">
              <Button variant="outline" onClick={onBack} type="button">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Main
              </Button>
             <Button type="submit">
               Create Service Job <ArrowRight className="ml-2 h-4 w-4" />

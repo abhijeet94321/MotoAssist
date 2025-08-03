@@ -24,6 +24,7 @@ import {
     FileText,
     CreditCard,
     Wallet,
+    QrCode,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -33,12 +34,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import Image from "next/image";
 import { useState } from "react";
 
 type BillPreviewProps = {
   job: ServiceJob;
   onPaymentUpdate: (jobId: string, status: PaymentStatus) => void;
   onBack: () => void;
+  onPendingBill: () => void;
 };
 
 // A simple SVG for WhatsApp icon as it's not in lucide-react
@@ -64,9 +77,11 @@ export default function BillPreview({
   job,
   onPaymentUpdate,
   onBack,
+  onPendingBill,
 }: BillPreviewProps) {
   const { toast } = useToast();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(job.payment.status);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const { vehicleDetails, serviceItems } = job;
 
@@ -115,12 +130,34 @@ export default function BillPreview({
   };
 
   const handleConfirmPayment = () => {
-    onPaymentUpdate(job.id, paymentStatus);
+    if (paymentStatus === 'Paid - Online') {
+        setIsQrModalOpen(true);
+    } else if (paymentStatus !== 'Pending') {
+        onPaymentUpdate(job.id, paymentStatus);
+        toast({
+            title: "Payment status updated!",
+            description: `Status set to ${paymentStatus}.`,
+        });
+    }
+  };
+
+  const handleQrConfirm = () => {
+    onPaymentUpdate(job.id, 'Paid - Online');
+    setIsQrModalOpen(false);
     toast({
         title: "Payment status updated!",
-        description: `Status set to ${paymentStatus}.`,
+        description: `Status set to Paid - Online.`,
     });
-  };
+  }
+
+  const handleQrCancel = () => {
+    onPaymentUpdate(job.id, 'Paid - Cash');
+    setIsQrModalOpen(false);
+    toast({
+        title: "Payment status updated!",
+        description: `Online payment cancelled. Status set to Paid - Cash.`,
+    });
+  }
 
   return (
     <>
@@ -207,17 +244,49 @@ export default function BillPreview({
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={handleConfirmPayment} variant="secondary" disabled={paymentStatus === 'Pending'}>
-                {paymentStatus === 'Paid - Cash' && <Wallet className="mr-2 h-4 w-4" />}
-                {paymentStatus === 'Paid - Online' && <CreditCard className="mr-2 h-4 w-4" />}
-                Confirm Payment
-            </Button>
+            {paymentStatus === 'Pending' ? (
+                 <Button onClick={onPendingBill} variant="secondary">
+                    Bill Pending
+                 </Button>
+            ) : (
+                <Button onClick={handleConfirmPayment}>
+                    {paymentStatus === 'Paid - Cash' && <Wallet className="mr-2 h-4 w-4" />}
+                    {paymentStatus === 'Paid - Online' && <CreditCard className="mr-2 h-4 w-4" />}
+                    Confirm Payment
+                </Button>
+            )}
+
             <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Share Bill
             </Button>
         </div>
       </CardFooter>
     </Card>
+
+    <AlertDialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center"><QrCode className="mr-2"/>Scan to Pay Online</AlertDialogTitle>
+                <AlertDialogDescription>
+                   Please scan the QR code below to complete the payment. After payment, click "Confirm Payment".
+                   If you choose to pay by other means, please Cancel.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-center p-4">
+                <Image 
+                    src="https://github.com/abhijeet94321/sanjeevika-assets/raw/main/111.jpg" 
+                    alt="Payment QR Code"
+                    width={250}
+                    height={250}
+                    data-ai-hint="QR code"
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleQrCancel}>Cancel (Pay Cash)</AlertDialogCancel>
+                <AlertDialogAction onClick={handleQrConfirm}>Confirm Payment</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
