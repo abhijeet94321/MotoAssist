@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { VehicleDetails, ServiceItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,8 +25,12 @@ import {
   FileText,
   Share2,
   RefreshCw,
+  FileDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import BillPDF from "./bill-pdf";
 
 type BillPreviewProps = {
   vehicleDetails: VehicleDetails;
@@ -60,6 +65,8 @@ export default function BillPreview({
   onNew,
 }: BillPreviewProps) {
   const { toast } = useToast();
+  const pdfRef = useRef<HTMLDivElement>(null);
+
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
     0
@@ -104,7 +111,44 @@ export default function BillPreview({
     });
   };
 
+  const handleDownloadPdf = () => {
+    const input = pdfRef.current;
+    if (!input) {
+      toast({
+        title: "Error generating PDF",
+        description: "Could not find the bill content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Generating PDF...",
+      description: "Please wait while we create your PDF bill.",
+    });
+
+    html2canvas(input, { scale: 2 }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`bill-${vehicleDetails.licensePlate}.pdf`);
+      toast({
+        title: "PDF Downloaded",
+        description: "Your bill has been successfully downloaded.",
+      });
+    });
+  };
+
+
   return (
+    <>
+    <div className="hidden">
+      <div ref={pdfRef}>
+        <BillPDF vehicleDetails={vehicleDetails} serviceItems={serviceItems} />
+      </div>
+    </div>
     <Card className="max-w-3xl mx-auto shadow-lg">
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -112,7 +156,7 @@ export default function BillPreview({
           <div>
             <CardTitle>Service Bill</CardTitle>
             <CardDescription>
-              Review the final bill. You can share it directly via WhatsApp.
+              Review the final bill. You can share it directly or download a PDF.
             </CardDescription>
           </div>
         </div>
@@ -174,9 +218,12 @@ export default function BillPreview({
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Services
         </Button>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
             <Button variant="secondary" onClick={onNew}>
                 <RefreshCw className="mr-2 h-4 w-4" /> New Service
+            </Button>
+            <Button variant="outline" onClick={handleDownloadPdf}>
+                <FileDown className="mr-2 h-4 w-4" /> Download PDF
             </Button>
             <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Share on WhatsApp
@@ -184,5 +231,6 @@ export default function BillPreview({
         </div>
       </CardFooter>
     </Card>
+    </>
   );
 }
