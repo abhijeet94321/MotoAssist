@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ServiceJob } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
@@ -83,6 +83,12 @@ export default function Home() {
     setView('main');
     setActiveJob(null);
   };
+  
+  const ongoingJobs = useMemo(() => {
+    return serviceJobs.filter(
+      (job) => job.status === 'Service Required' || job.status === 'In Progress'
+    );
+  }, [serviceJobs]);
 
   const renderView = () => {
     switch (view) {
@@ -129,7 +135,7 @@ export default function Home() {
             </TabsContent>
             <TabsContent value="jobs">
                <ServiceJobsList
-                jobs={serviceJobs}
+                jobs={ongoingJobs}
                 onUpdateStatusClick={handleUpdateStatusClick}
               />
             </TabsContent>
