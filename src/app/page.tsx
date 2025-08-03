@@ -122,6 +122,7 @@ export default function Home() {
           <ServiceIntakeForm
             onSubmit={handleIntakeSubmit}
             onBack={handleBackToMain}
+            existingJobs={serviceJobs}
           />
         );
       case 'update_status':

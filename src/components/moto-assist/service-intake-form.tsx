@@ -32,8 +32,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { VehicleDetails } from "@/lib/types";
+import type { ServiceJob, VehicleDetails } from "@/lib/types";
 import { Textarea } from "../ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   vehicleDetails: z.object({
@@ -53,9 +54,11 @@ type ServiceIntakeFormProps = {
   onSubmit: (data: z.infer<typeof formSchema>) => void;
   onBack: () => void;
   initialData?: z.infer<typeof formSchema> | null;
+  existingJobs: ServiceJob[];
 };
 
-export default function ServiceIntakeForm({ onSubmit, onBack, initialData }: ServiceIntakeFormProps) {
+export default function ServiceIntakeForm({ onSubmit, onBack, initialData, existingJobs }: ServiceIntakeFormProps) {
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -70,6 +73,30 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData }: Ser
     },
   });
 
+  const handleLicensePlateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    const licensePlate = event.target.value.trim().toUpperCase();
+    if (!licensePlate) return;
+
+    // Find the most recent job with this license plate
+    const jobForVehicle = [...existingJobs]
+      .reverse()
+      .find(job => job.vehicleDetails.licensePlate.toUpperCase() === licensePlate);
+
+    if (jobForVehicle) {
+      const { vehicleDetails } = jobForVehicle;
+      form.setValue('vehicleDetails.userName', vehicleDetails.userName);
+      form.setValue('vehicleDetails.mobile', vehicleDetails.mobile);
+      form.setValue('vehicleDetails.address', vehicleDetails.address);
+      form.setValue('vehicleDetails.vehicleModel', vehicleDetails.vehicleModel);
+
+      toast({
+        title: "Repeat Customer Found!",
+        description: `Details for ${vehicleDetails.userName} have been auto-filled.`,
+      });
+    }
+  };
+
+
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
       <CardHeader>
@@ -81,6 +108,48 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData }: Ser
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h3 className="font-medium text-lg">Vehicle & Service Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField
+                  control={form.control}
+                  name="vehicleDetails.licensePlate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>License Plate</FormLabel>
+                      <div className="relative">
+                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. MH12AB1234" 
+                            {...field} 
+                            onBlur={handleLicensePlateBlur}
+                            className="pl-10 uppercase"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="vehicleDetails.vehicleModel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vehicle Make & Model</FormLabel>
+                      <div className="relative">
+                         <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input placeholder="e.g. Honda Activa 6G" {...field} className="pl-10"/>
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium text-lg">Customer Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,41 +204,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData }: Ser
               />
             </div>
             <div className="space-y-4 p-4 border rounded-lg">
-              <h3 className="font-medium text-lg">Vehicle & Service Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField
-                  control={form.control}
-                  name="vehicleDetails.vehicleModel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vehicle Make & Model</FormLabel>
-                      <div className="relative">
-                         <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <FormControl>
-                          <Input placeholder="e.g. Honda Activa 6G" {...field} className="pl-10"/>
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="vehicleDetails.licensePlate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>License Plate</FormLabel>
-                      <div className="relative">
-                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <FormControl>
-                          <Input placeholder="e.g. MH12AB1234" {...field} className="pl-10"/>
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+               <h3 className="font-medium text-lg">Service Request</h3>
                <FormField
                   control={form.control}
                   name="initialServiceRequest"
