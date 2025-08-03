@@ -1,6 +1,6 @@
 "use client";
 
-import type { VehicleDetails, ServiceItem } from "@/lib/types";
+import type { ServiceJob, PaymentStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,17 +20,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ArrowLeft,
-  FileText,
-  RefreshCw,
+    ArrowLeft,
+    FileText,
+    CreditCard,
+    Wallet,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 type BillPreviewProps = {
-  vehicleDetails: VehicleDetails;
-  serviceItems: ServiceItem[];
+  job: ServiceJob;
+  onPaymentUpdate: (jobId: string, status: PaymentStatus) => void;
   onBack: () => void;
-  onNew: () => void;
 };
 
 // A simple SVG for WhatsApp icon as it's not in lucide-react
@@ -53,12 +61,14 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function BillPreview({
-  vehicleDetails,
-  serviceItems,
+  job,
+  onPaymentUpdate,
   onBack,
-  onNew,
 }: BillPreviewProps) {
   const { toast } = useToast();
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(job.payment.status);
+
+  const { vehicleDetails, serviceItems } = job;
 
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
@@ -104,6 +114,14 @@ export default function BillPreview({
     });
   };
 
+  const handleConfirmPayment = () => {
+    onPaymentUpdate(job.id, paymentStatus);
+    toast({
+        title: "Payment status updated!",
+        description: `Status set to ${paymentStatus}.`,
+    });
+  };
+
   return (
     <>
     <Card className="max-w-3xl mx-auto shadow-lg">
@@ -111,9 +129,9 @@ export default function BillPreview({
         <div className="flex items-center gap-3">
           <FileText className="w-8 h-8 text-primary" />
           <div>
-            <CardTitle>Service Bill</CardTitle>
+            <CardTitle>Service Bill & Payment</CardTitle>
             <CardDescription>
-              Review the final bill and share it on WhatsApp.
+              Review the final bill, share it, and record the payment status.
             </CardDescription>
           </div>
         </div>
@@ -164,7 +182,20 @@ export default function BillPreview({
 
         <Separator />
 
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          <div className="w-1/3">
+            <h3 className="font-semibold mb-2">Payment Status</h3>
+            <Select onValueChange={(v) => setPaymentStatus(v as PaymentStatus)} defaultValue={paymentStatus}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Update payment status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Paid - Cash">Paid - Cash</SelectItem>
+                    <SelectItem value="Paid - Online">Paid - Online</SelectItem>
+                </SelectContent>
+            </Select>
+          </div>
           <div className="text-right">
             <p className="text-muted-foreground">Total Amount</p>
             <p className="text-3xl font-bold text-primary">₹{totalCost.toFixed(2)}</p>
@@ -173,14 +204,16 @@ export default function BillPreview({
       </CardContent>
       <CardFooter className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Services
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <div className="flex flex-wrap gap-2 justify-center">
-            <Button variant="secondary" onClick={onNew}>
-                <RefreshCw className="mr-2 h-4 w-4" /> New Service
+            <Button onClick={handleConfirmPayment} variant="secondary" disabled={paymentStatus === 'Pending'}>
+                {paymentStatus === 'Paid - Cash' && <Wallet className="mr-2 h-4 w-4" />}
+                {paymentStatus === 'Paid - Online' && <CreditCard className="mr-2 h-4 w-4" />}
+                Confirm Payment
             </Button>
             <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white">
-                <WhatsAppIcon className="mr-2 h-4 w-4" /> Share on WhatsApp
+                <WhatsAppIcon className="mr-2 h-4 w-4" /> Share Bill
             </Button>
         </div>
       </CardFooter>
