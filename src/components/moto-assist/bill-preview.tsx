@@ -111,7 +111,7 @@ export default function BillPreview({
     });
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     const input = pdfRef.current;
     if (!input) {
       toast({
@@ -127,18 +127,29 @@ export default function BillPreview({
       description: "Please wait while we create your PDF bill.",
     });
 
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`bill-${vehicleDetails.licensePlate}.pdf`);
-      toast({
-        title: "PDF Downloaded",
-        description: "Your bill has been successfully downloaded.",
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      await pdf.html(input, {
+        callback: function (doc) {
+          doc.save(`bill-${vehicleDetails.licensePlate}.pdf`);
+          toast({
+            title: 'PDF Downloaded',
+            description: 'Your bill has been successfully downloaded.',
+          });
+        },
+        x: 0,
+        y: 0,
+        width: 210, // A4 width in mm
+        windowWidth: input.scrollWidth
       });
-    });
+    } catch (error) {
+       console.error("Failed to generate PDF", error);
+       toast({
+        title: 'Error generating PDF',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    }
   };
 
 
