@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import type { VehicleDetails, ServiceItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +22,9 @@ import {
 import {
   ArrowLeft,
   FileText,
-  Share2,
   RefreshCw,
-  FileDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 type BillPreviewProps = {
   vehicleDetails: VehicleDetails;
@@ -109,101 +104,6 @@ export default function BillPreview({
     });
   };
 
-  const handleDownloadPdf = () => {
-    toast({
-      title: "Generating PDF...",
-      description: "Please wait while we create your PDF bill.",
-    });
-
-    try {
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(22);
-      doc.setFont("helvetica", "bold");
-      doc.text("MotoAssist", 14, 22);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      doc.text("Service Invoice", 14, 30);
-
-      doc.setFontSize(10);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, 22, { align: "right" });
-      doc.text(`Invoice #: ${Math.floor(Math.random() * 100000)}`, 190, 30, { align: "right" });
-
-      doc.setLineWidth(0.5);
-      doc.line(14, 35, 196, 35);
-
-      // Customer and Vehicle Details
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Billed To:", 14, 45);
-      doc.setFont("helvetica", "normal");
-      doc.text(vehicleDetails.userName, 14, 52);
-      doc.text(vehicleDetails.address, 14, 59);
-      doc.text(vehicleDetails.mobile, 14, 66);
-      
-      doc.setFont("helvetica", "bold");
-      doc.text("Vehicle Details:", 110, 45);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Model: ${vehicleDetails.vehicleModel}`, 110, 52);
-      doc.text(`License Plate: ${vehicleDetails.licensePlate}`, 110, 59);
-      
-      // Service Items Table
-      const tableColumn = ["Description", "Parts Cost", "Labor Cost", "Subtotal"];
-      const tableRows = serviceItems.map(item => [
-        item.description,
-        `₹${item.partsCost.toFixed(2)}`,
-        `₹${item.laborCost.toFixed(2)}`,
-        `₹${(item.partsCost + item.laborCost).toFixed(2)}`
-      ]);
-
-      (doc as any).autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 75,
-        headStyles: { fillColor: [38, 127, 204] },
-        styles: { font: "helvetica", fontSize: 10 },
-        columnStyles: {
-          0: { cellWidth: 88 },
-          1: { cellWidth: 30, halign: 'right' },
-          2: { cellWidth: 30, halign: 'right' },
-          3: { cellWidth: 30, halign: 'right' },
-        }
-      });
-      
-      const finalY = (doc as any).lastAutoTable.finalY;
-
-      // Total
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Total Amount Due:", 140, finalY + 15, { align: "right" });
-      doc.text(`₹${totalCost.toFixed(2)}`, 196, finalY + 15, { align: "right" });
-
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(150);
-      doc.text("Thank you for your business!", 105, 280, { align: 'center' });
-      doc.text("MotoAssist | Powered by Firebase and Genkit", 105, 287, { align: 'center' });
-
-
-      doc.save(`bill-${vehicleDetails.licensePlate}.pdf`);
-
-      toast({
-        title: 'PDF Downloaded',
-        description: 'Your bill has been successfully downloaded.',
-      });
-
-    } catch (error) {
-       console.error("Failed to generate PDF", error);
-       toast({
-        title: 'Error generating PDF',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-
   return (
     <>
     <Card className="max-w-3xl mx-auto shadow-lg">
@@ -213,7 +113,7 @@ export default function BillPreview({
           <div>
             <CardTitle>Service Bill</CardTitle>
             <CardDescription>
-              Review the final bill. You can share it directly or download a PDF.
+              Review the final bill and share it on WhatsApp.
             </CardDescription>
           </div>
         </div>
@@ -278,9 +178,6 @@ export default function BillPreview({
         <div className="flex flex-wrap gap-2 justify-center">
             <Button variant="secondary" onClick={onNew}>
                 <RefreshCw className="mr-2 h-4 w-4" /> New Service
-            </Button>
-            <Button variant="outline" onClick={handleDownloadPdf}>
-                <FileDown className="mr-2 h-4 w-4" /> Download PDF
             </Button>
             <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Share on WhatsApp
