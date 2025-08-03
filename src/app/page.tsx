@@ -10,6 +10,7 @@ import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from '@/hooks/use-toast';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing';
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
+  const { toast } = useToast();
 
   const handleNewServiceClick = () => {
     setActiveJob(null);
@@ -38,6 +40,21 @@ export default function Home() {
       intakeDate: new Date().toISOString(),
     };
     setServiceJobs(prev => [...prev, newJob]);
+    
+    // Send WhatsApp Welcome Message
+    const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
+    const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+    const encodedText = encodeURIComponent(message);
+    const mobileNumber = mobile.replace(/\D/g, '');
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
+    
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    
+    toast({
+      title: "Welcome Message Sent",
+      description: "A welcome message has been prepared to send via WhatsApp.",
+    });
+
     setView('main');
   };
 
