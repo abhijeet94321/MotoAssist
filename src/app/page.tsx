@@ -5,12 +5,13 @@ import type { ServiceJob } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Wrench, LayoutDashboard, List } from 'lucide-react';
+import { PlusCircle, Wrench, LayoutDashboard, List, IndianRupee } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
+import PaymentsList from '@/components/moto-assist/payments-list';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing';
 
@@ -107,6 +108,13 @@ export default function Home() {
     );
   }, [serviceJobs]);
 
+  const paymentJobs = useMemo(() => {
+    return serviceJobs.filter(
+      (job) => job.status === 'Completed' || job.status === 'Billed'
+    );
+  }, [serviceJobs]);
+
+
   const renderView = () => {
     switch (view) {
       case 'new_service':
@@ -143,9 +151,10 @@ export default function Home() {
       default:
         return (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
               <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing Services</TabsTrigger>
+              <TabsTrigger value="payments"><IndianRupee className="mr-2 h-4 w-4" /> Payments</TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard">
               <Dashboard jobs={serviceJobs} />
@@ -153,6 +162,12 @@ export default function Home() {
             <TabsContent value="jobs">
                <ServiceJobsList
                 jobs={ongoingJobs}
+                onUpdateStatusClick={handleUpdateStatusClick}
+              />
+            </TabsContent>
+             <TabsContent value="payments">
+               <PaymentsList
+                jobs={paymentJobs}
                 onUpdateStatusClick={handleUpdateStatusClick}
               />
             </TabsContent>
