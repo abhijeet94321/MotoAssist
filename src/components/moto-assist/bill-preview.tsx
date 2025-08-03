@@ -30,7 +30,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import BillPDF from "./bill-pdf";
 
 type BillPreviewProps = {
   vehicleDetails: VehicleDetails;
@@ -65,7 +64,6 @@ export default function BillPreview({
   onNew,
 }: BillPreviewProps) {
   const { toast } = useToast();
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
@@ -163,7 +161,7 @@ export default function BillPreview({
         head: [tableColumn],
         body: tableRows,
         startY: 75,
-        headStyles: { fillColor: [22, 160, 133] },
+        headStyles: { fillColor: [38, 127, 204] },
         styles: { font: "helvetica", fontSize: 10 },
         columnStyles: {
           0: { cellWidth: 88 },
@@ -208,11 +206,6 @@ export default function BillPreview({
 
   return (
     <>
-    <div className="hidden">
-      <div ref={pdfRef}>
-        <BillPDF vehicleDetails={vehicleDetails} serviceItems={serviceItems} />
-      </div>
-    </div>
     <Card className="max-w-3xl mx-auto shadow-lg">
       <CardHeader>
         <div className="flex items-center gap-3">
