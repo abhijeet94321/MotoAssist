@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import "jspdf-autotable";
 import BillPDF from "./bill-pdf";
 
 type BillPreviewProps = {
@@ -111,37 +111,90 @@ export default function BillPreview({
     });
   };
 
-  const handleDownloadPdf = async () => {
-    const input = pdfRef.current;
-    if (!input) {
-      toast({
-        title: "Error generating PDF",
-        description: "Could not find the bill content.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleDownloadPdf = () => {
     toast({
       title: "Generating PDF...",
       description: "Please wait while we create your PDF bill.",
     });
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      await pdf.html(input, {
-        callback: function (doc) {
-          doc.save(`bill-${vehicleDetails.licensePlate}.pdf`);
-          toast({
-            title: 'PDF Downloaded',
-            description: 'Your bill has been successfully downloaded.',
-          });
-        },
-        x: 0,
-        y: 0,
-        width: 210, // A4 width in mm
-        windowWidth: input.scrollWidth
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("MotoAssist", 14, 22);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text("Service Invoice", 14, 30);
+
+      doc.setFontSize(10);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, 22, { align: "right" });
+      doc.text(`Invoice #: ${Math.floor(Math.random() * 100000)}`, 190, 30, { align: "right" });
+
+      doc.setLineWidth(0.5);
+      doc.line(14, 35, 196, 35);
+
+      // Customer and Vehicle Details
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Billed To:", 14, 45);
+      doc.setFont("helvetica", "normal");
+      doc.text(vehicleDetails.userName, 14, 52);
+      doc.text(vehicleDetails.address, 14, 59);
+      doc.text(vehicleDetails.mobile, 14, 66);
+      
+      doc.setFont("helvetica", "bold");
+      doc.text("Vehicle Details:", 110, 45);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Model: ${vehicleDetails.vehicleModel}`, 110, 52);
+      doc.text(`License Plate: ${vehicleDetails.licensePlate}`, 110, 59);
+      
+      // Service Items Table
+      const tableColumn = ["Description", "Parts Cost", "Labor Cost", "Subtotal"];
+      const tableRows = serviceItems.map(item => [
+        item.description,
+        `₹${item.partsCost.toFixed(2)}`,
+        `₹${item.laborCost.toFixed(2)}`,
+        `₹${(item.partsCost + item.laborCost).toFixed(2)}`
+      ]);
+
+      (doc as any).autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 75,
+        headStyles: { fillColor: [22, 160, 133] },
+        styles: { font: "helvetica", fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 88 },
+          1: { cellWidth: 30, halign: 'right' },
+          2: { cellWidth: 30, halign: 'right' },
+          3: { cellWidth: 30, halign: 'right' },
+        }
       });
+      
+      const finalY = (doc as any).lastAutoTable.finalY;
+
+      // Total
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total Amount Due:", 140, finalY + 15, { align: "right" });
+      doc.text(`₹${totalCost.toFixed(2)}`, 196, finalY + 15, { align: "right" });
+
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(150);
+      doc.text("Thank you for your business!", 105, 280, { align: 'center' });
+      doc.text("MotoAssist | Powered by Firebase and Genkit", 105, 287, { align: 'center' });
+
+
+      doc.save(`bill-${vehicleDetails.licensePlate}.pdf`);
+
+      toast({
+        title: 'PDF Downloaded',
+        description: 'Your bill has been successfully downloaded.',
+      });
+
     } catch (error) {
        console.error("Failed to generate PDF", error);
        toast({
