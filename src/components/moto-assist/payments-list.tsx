@@ -28,10 +28,10 @@ type PaymentsListProps = {
 const statusBadgeVariants = cva("capitalize", {
   variants: {
     status: {
-      "Service Required": "bg-orange-100 text-orange-800 border-orange-200",
-      "In Progress": "bg-blue-100 text-blue-800 border-blue-200",
-      "Completed": "bg-purple-100 text-purple-800 border-purple-200",
-      "Billed": "bg-yellow-100 text-yellow-800 border-yellow-200",
+      "Service Required": "bg-red-100 text-red-800 border-red-200",
+      "In Progress": "bg-amber-100 text-amber-800 border-amber-200",
+      "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
+      "Billed": "bg-blue-100 text-blue-800 border-blue-200",
       "Cycle Complete": "bg-green-100 text-green-800 border-green-200",
     },
   },
