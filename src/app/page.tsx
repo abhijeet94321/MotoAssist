@@ -5,15 +5,29 @@ import type { ServiceJob } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Wrench, LayoutDashboard, List, IndianRupee } from 'lucide-react';
+import { PlusCircle, Wrench, LayoutDashboard, List, IndianRupee, History } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
 import PaymentsList from '@/components/moto-assist/payments-list';
+import HistoryList from '@/components/moto-assist/history-list';
+import JobDetailsView from '@/components/moto-assist/job-details-view';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-type View = 'main' | 'new_service' | 'update_status' | 'billing';
+
+type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
 export default function Home() {
   const [view, setView] = useState<View>('main');
@@ -96,6 +110,19 @@ export default function Home() {
      }));
      setView('main');
   };
+  
+  const handleViewDetails = (job: ServiceJob) => {
+    setActiveJob(job);
+    setView('view_details');
+  };
+
+  const handleDeleteJob = (jobId: string) => {
+    setServiceJobs(prev => prev.filter(job => job.id !== jobId));
+    toast({
+        title: "Job Deleted",
+        description: "The service record has been permanently removed.",
+    });
+  };
 
   const handleBackToMain = () => {
     setView('main');
@@ -111,6 +138,12 @@ export default function Home() {
   const paymentJobs = useMemo(() => {
     return serviceJobs.filter(
       (job) => job.status === 'Completed' || job.status === 'Billed'
+    );
+  }, [serviceJobs]);
+  
+  const completedJobs = useMemo(() => {
+    return serviceJobs.filter(
+      (job) => job.status === 'Cycle Complete'
     );
   }, [serviceJobs]);
 
@@ -148,14 +181,22 @@ export default function Home() {
           );
         }
         return null;
+      case 'view_details':
+        if (activeJob) {
+            return (
+                <JobDetailsView job={activeJob} onBack={handleBackToMain} />
+            );
+        }
+        return null;
       case 'main':
       default:
         return (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
               <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing Services</TabsTrigger>
               <TabsTrigger value="payments"><IndianRupee className="mr-2 h-4 w-4" /> Payments</TabsTrigger>
+              <TabsTrigger value="history"><History className="mr-2 h-4 w-4" /> History</TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard">
               <Dashboard jobs={serviceJobs} />
@@ -171,6 +212,13 @@ export default function Home() {
                 jobs={paymentJobs}
                 onUpdateStatusClick={handleUpdateStatusClick}
               />
+            </TabsContent>
+            <TabsContent value="history">
+               <HistoryList
+                  jobs={completedJobs}
+                  onViewDetails={handleViewDetails}
+                  onDelete={handleDeleteJob}
+                />
             </TabsContent>
           </Tabs>
         );
