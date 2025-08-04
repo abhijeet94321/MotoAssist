@@ -134,29 +134,16 @@ export default function BillPreview({
         setIsQrModalOpen(true);
     } else if (paymentStatus !== 'Pending') {
         onPaymentUpdate(job.id, paymentStatus);
-        toast({
-            title: "Payment status updated!",
-            description: `Status set to ${paymentStatus}.`,
-        });
     }
   };
 
   const handleQrConfirm = () => {
     onPaymentUpdate(job.id, 'Paid - Online');
     setIsQrModalOpen(false);
-    toast({
-        title: "Payment status updated!",
-        description: `Status set to Paid - Online.`,
-    });
   }
 
   const handleQrCancel = () => {
-    onPaymentUpdate(job.id, 'Paid - Cash');
     setIsQrModalOpen(false);
-    toast({
-        title: "Payment status updated!",
-        description: `Online payment cancelled. Status set to Paid - Cash.`,
-    });
   }
 
   return (
@@ -282,7 +269,7 @@ export default function BillPreview({
                 />
             </div>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleQrCancel}>Cancel (Pay Cash)</AlertDialogCancel>
+                <AlertDialogCancel onClick={handleQrCancel}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleQrConfirm}>Confirm Payment</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

@@ -66,7 +66,7 @@ export default function Home() {
     setView('new_service');
   };
   
-  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment'>) => {
+  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate'>) => {
     const isRepeatCustomer = serviceJobs.some(
       (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
     );
@@ -151,18 +151,16 @@ export default function Home() {
 
   const handlePaymentUpdate = async (jobId: string, paymentStatus: ServiceJob['payment']['status']) => {
      const jobRef = doc(db, 'serviceJobs', jobId);
-     const updateData: Partial<ServiceJob> = { 
-        payment: { status: paymentStatus } 
-     };
      
-     if (paymentStatus === 'Paid - Cash' || paymentStatus === 'Paid - Online') {
-        updateData.status = 'Cycle Complete';
-     } else {
-        updateData.status = 'Completed'; // Revert to completed if payment is undone
-     }
-
      try {
-        await updateDoc(jobRef, updateData);
+        const job = serviceJobs.find(j => j.id === jobId);
+        if (!job) throw new Error("Job not found");
+
+        const payment = { ...job.payment, status: paymentStatus };
+        const newStatus = (paymentStatus === 'Paid - Cash' || paymentStatus === 'Paid - Online') ? 'Cycle Complete' : 'Completed';
+        
+        await updateDoc(jobRef, { payment, status: newStatus });
+
         toast({
           title: "Payment Updated",
           description: `Payment status has been updated.`,

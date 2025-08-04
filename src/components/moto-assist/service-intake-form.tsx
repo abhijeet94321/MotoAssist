@@ -32,7 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { ServiceJob, VehicleDetails } from "@/lib/types";
+import type { ServiceJob } from "@/lib/types";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
@@ -107,7 +107,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6">
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium text-lg">Vehicle & Service Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
