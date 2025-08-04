@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ServiceJob, ServiceItem, ServiceStatus } from "@/lib/types";
+import type { ServiceJob, ServiceItem, ServiceStatus, Mechanic } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +32,7 @@ import { Separator } from "../ui/separator";
 
 type ServiceStatusUpdaterProps = {
   job: ServiceJob;
+  mechanics: Mechanic[];
   onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string) => void;
   onBack: () => void;
 };
@@ -48,18 +49,16 @@ const statusUpdateTextMap: Partial<Record<ServiceStatus, string>> = {
     'Billed': 'Hi {userName}, your bill for the service on your vehicle ({vehicleModel}) is ready. Please proceed with the payment.',
 };
 
-const MECHANICS = ["Suresh", "Ramesh", "Ganesh", "Mahesh"];
-
-
 export default function ServiceStatusUpdater({
   job,
+  mechanics,
   onUpdate,
   onBack,
 }: ServiceStatusUpdaterProps) {
     const { toast } = useToast();
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
-    const [assignedMechanic, setAssignedMechanic] = useState<string | undefined>(job.mechanic);
+    const [assignedMechanic, setAssignedMechanic] = useState<string>(job.mechanic);
 
     const handleUpdate = () => {
         if (currentStatus === 'In Progress' && !assignedMechanic) {
@@ -172,7 +171,7 @@ export default function ServiceStatusUpdater({
                     )}
                  </div>
             </div>
-             {(currentStatus === 'In Progress' || (currentStatus === 'Service Required' && job.mechanic) || currentStatus === 'Completed' ) && (
+             {(currentStatus === 'In Progress' || currentStatus === 'Completed' || job.mechanic) && (
                  <div className="space-y-2">
                     <h3 className="font-semibold">Assign Mechanic</h3>
                     <Select onValueChange={setAssignedMechanic} value={assignedMechanic}>
@@ -183,9 +182,13 @@ export default function ServiceStatusUpdater({
                             </div>
                         </SelectTrigger>
                         <SelectContent>
-                            {MECHANICS.map(m => (
-                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
+                            {mechanics.length === 0 ? (
+                                <SelectItem value="-" disabled>No mechanics available. Add one in Settings.</SelectItem>
+                            ) : (
+                                mechanics.map(m => (
+                                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                                ))
+                            )}
                         </SelectContent>
                     </Select>
                  </div>

@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
-import type { ServiceJob } from '@/lib/types';
+import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import PaymentsList from '@/components/moto-assist/payments-list';
 import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
+import MechanicSettings from '@/components/moto-assist/mechanic-settings';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import {
@@ -34,13 +35,14 @@ type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details
 export default function Home() {
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const qJobs = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
+    const unsubscribeJobs = onSnapshot(qJobs, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
       querySnapshot.forEach((doc) => {
         jobs.push({ id: doc.id, ...doc.data() } as ServiceJob);
@@ -51,13 +53,33 @@ export default function Home() {
       console.error("Error fetching service jobs: ", error);
       toast({
         title: "Error fetching data",
-        description: "Could not connect to the database. Please check your connection and Firebase setup.",
+        description: "Could not connect to the jobs database.",
         variant: "destructive",
       });
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const qMechanics = query(collection(db, "mechanics"), orderBy("name"));
+    const unsubscribeMechanics = onSnapshot(qMechanics, (querySnapshot) => {
+      const mechanicList: Mechanic[] = [];
+      querySnapshot.forEach((doc) => {
+        mechanicList.push({ id: doc.id, ...doc.data() } as Mechanic);
+      });
+      setMechanics(mechanicList);
+    }, (error) => {
+       console.error("Error fetching mechanics: ", error);
+       toast({
+        title: "Error fetching mechanics",
+        description: "Could not connect to the mechanics database.",
+        variant: "destructive",
+      });
+    });
+
+
+    return () => {
+      unsubscribeJobs();
+      unsubscribeMechanics();
+    };
   }, [toast]);
 
 
@@ -66,7 +88,7 @@ export default function Home() {
     setView('new_service');
   };
   
-  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate'>) => {
+  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic'>) => {
     const isRepeatCustomer = serviceJobs.some(
       (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
     );
@@ -123,7 +145,7 @@ export default function Home() {
     if (items) {
       updateData.serviceItems = items;
     }
-    if (mechanic) {
+    if (mechanic !== undefined) {
       updateData.mechanic = mechanic;
     }
     
@@ -206,6 +228,41 @@ export default function Home() {
     setView('main');
     setActiveJob(null);
   };
+
+  const handleAddMechanic = async (name: string) => {
+    if (!name) return;
+    try {
+        await addDoc(collection(db, 'mechanics'), { name });
+        toast({
+            title: "Mechanic Added",
+            description: `${name} has been added to the list.`,
+        });
+    } catch (error) {
+        console.error("Error adding mechanic: ", error);
+        toast({
+            title: "Error Adding Mechanic",
+            description: "Could not add the new mechanic. Please try again.",
+            variant: "destructive",
+        });
+    }
+  };
+
+  const handleDeleteMechanic = async (mechanicId: string) => {
+    try {
+        await deleteDoc(doc(db, 'mechanics', mechanicId));
+        toast({
+            title: "Mechanic Deleted",
+            description: "The mechanic has been removed from the list.",
+        });
+    } catch (error) {
+        console.error("Error deleting mechanic: ", error);
+        toast({
+            title: "Error Deleting Mechanic",
+            description: "Could not delete the mechanic. Please try again.",
+            variant: "destructive",
+        });
+    }
+  };
   
   const ongoingJobs = useMemo(() => {
     return serviceJobs.filter(
@@ -247,6 +304,7 @@ export default function Home() {
               job={activeJob}
               onUpdate={handleStatusUpdate}
               onBack={handleBackToMain}
+              mechanics={mechanics}
             />
           );
         }
@@ -279,6 +337,7 @@ export default function Home() {
               <TabsTrigger value="jobs"><List className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Ongoing</span></TabsTrigger>
               <TabsTrigger value="payments"><IndianRupee className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Payments</span></TabsTrigger>
               <TabsTrigger value="history"><History className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">History</span></TabsTrigger>
+              <TabsTrigger value="settings"><Settings className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Settings</span></TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard">
               <Dashboard jobs={serviceJobs} />
@@ -300,6 +359,13 @@ export default function Home() {
                   jobs={completedJobs}
                   onViewDetails={handleViewDetails}
                   onDelete={handleDeleteJob}
+                />
+            </TabsContent>
+            <TabsContent value="settings">
+               <MechanicSettings
+                  mechanics={mechanics}
+                  onAddMechanic={handleAddMechanic}
+                  onDeleteMechanic={handleDeleteMechanic}
                 />
             </TabsContent>
           </Tabs>
