@@ -192,7 +192,7 @@ export default function Home() {
       default:
         return (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="flex flex-wrap h-auto justify-center sm:grid sm:w-full sm:grid-cols-4">
+            <TabsList className="flex flex-wrap h-auto justify-center">
               <TabsTrigger value="dashboard"><LayoutDashboard className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Dashboard</span></TabsTrigger>
               <TabsTrigger value="jobs"><List className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Ongoing</span></TabsTrigger>
               <TabsTrigger value="payments"><IndianRupee className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Payments</span></TabsTrigger>

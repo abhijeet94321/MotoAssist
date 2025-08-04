@@ -55,7 +55,7 @@ export default function Dashboard({ jobs }: DashboardProps) {
 
   return (
     <div className="grid gap-6">
-       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
@@ -106,45 +106,47 @@ export default function Dashboard({ jobs }: DashboardProps) {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Pending Payments</CardTitle>
             <CardDescription>A list of customers with unpaid bills.</CardDescription>
           </CardHeader>
           <CardContent>
-             <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stats.pendingPayments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center h-24">No pending payments.</TableCell>
-                    </TableRow>
-                  ) : (
-                    stats.pendingPayments.map(job => (
-                       <TableRow key={job.id}>
-                         <TableCell>
-                           <div className="font-medium">{job.vehicleDetails.userName}</div>
-                           <div className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</div>
-                         </TableCell>
-                         <TableCell>
-                           <div className="font-medium">{job.vehicleDetails.vehicleModel}</div>
-                           <div className="text-sm text-muted-foreground">{job.vehicleDetails.licensePlate}</div>
-                         </TableCell>
-                         <TableCell className="text-right font-medium">
-                           ₹{job.serviceItems.reduce((acc, item) => acc + item.partsCost + item.laborCost, 0).toFixed(2)}
-                         </TableCell>
-                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-             </Table>
+             <div className="overflow-x-auto">
+                 <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stats.pendingPayments.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center h-24">No pending payments.</TableCell>
+                        </TableRow>
+                      ) : (
+                        stats.pendingPayments.map(job => (
+                           <TableRow key={job.id}>
+                             <TableCell>
+                               <div className="font-medium">{job.vehicleDetails.userName}</div>
+                               <div className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</div>
+                             </TableCell>
+                             <TableCell>
+                               <div className="font-medium">{job.vehicleDetails.vehicleModel}</div>
+                               <div className="text-sm text-muted-foreground">{job.vehicleDetails.licensePlate}</div>
+                             </TableCell>
+                             <TableCell className="text-right font-medium">
+                               ₹{job.serviceItems.reduce((acc, item) => acc + item.partsCost + item.laborCost, 0).toFixed(2)}
+                             </TableCell>
+                           </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                 </Table>
+             </div>
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
