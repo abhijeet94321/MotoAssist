@@ -5,7 +5,7 @@ import type { ServiceJob } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Wrench, LayoutDashboard, List, IndianRupee, History } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -58,7 +58,7 @@ export default function Home() {
     
     // Send WhatsApp Welcome Message
     const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
-    const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+    const message = `Thank you for choosing SAIKRUPA SERVICE CENTER, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
     const encodedText = encodeURIComponent(message);
     const mobileNumber = mobile.replace(/\D/g, '');
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
@@ -192,11 +192,11 @@ export default function Home() {
       default:
         return (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-              <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
-              <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing</TabsTrigger>
-              <TabsTrigger value="payments"><IndianRupee className="mr-2 h-4 w-4" /> Payments</TabsTrigger>
-              <TabsTrigger value="history"><History className="mr-2 h-4 w-4" /> History</TabsTrigger>
+            <TabsList className="flex flex-wrap h-auto justify-center sm:grid sm:w-full sm:grid-cols-4">
+              <TabsTrigger value="dashboard"><LayoutDashboard className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Dashboard</span></TabsTrigger>
+              <TabsTrigger value="jobs"><List className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Ongoing</span></TabsTrigger>
+              <TabsTrigger value="payments"><IndianRupee className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Payments</span></TabsTrigger>
+              <TabsTrigger value="history"><History className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">History</span></TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard">
               <Dashboard jobs={serviceJobs} />
@@ -231,11 +231,11 @@ export default function Home() {
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-primary p-2 rounded-lg">
-              <Wrench className="h-8 w-8 text-primary-foreground" />
+              <Cog className="h-8 w-8 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                MotoAssist
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                SAIKRUPA SERVICE CENTER
               </h1>
               <p className="text-muted-foreground">
                 Your complete service management solution.

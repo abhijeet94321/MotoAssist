@@ -93,7 +93,7 @@ export default function ServiceStatusUpdater({
         }
     }
 
-    const canProceed = nextStatusMap[currentStatus] && (currentStatus !== 'Completed' || serviceItems.length > 0);
+    const canProceed = nextStatusMap[currentStatus] && (currentStatus !== 'In Progress' || serviceItems.length > 0);
 
   return (
     <Card className="shadow-lg">
@@ -141,7 +141,7 @@ export default function ServiceStatusUpdater({
             </div>
         </div>
         
-        {currentStatus === 'Completed' && (
+        {currentStatus === 'In Progress' && (
             <ServiceLogger
                 vehicleModel={job.vehicleDetails.vehicleModel}
                 initialServices={serviceItems}

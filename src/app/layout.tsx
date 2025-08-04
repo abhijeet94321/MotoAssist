@@ -3,13 +3,13 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MotoAssist',
+  title: 'SAIKRUPA SERVICE CENTER',
   description: 'Your one-stop solution for two-wheeler service management.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'MotoAssist',
+    title: 'SAIKRUPA SERVICE CENTER',
   },
 };
 
