@@ -161,14 +161,14 @@ export default function ServiceStatusUpdater({
         )}
 
       </CardContent>
-      <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-3">
+      <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2">
         <Button variant="outline" onClick={onBack} className="w-full sm:w-auto">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Main
         </Button>
-        <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="secondary" onClick={handleUpdate} className="flex-1 sm:flex-initial">Save Changes</Button>
+        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="secondary" onClick={handleUpdate} className="w-full sm:w-auto">Save Changes</Button>
             {canProceed && (
-                <Button onClick={handleProceed} className="flex-1 sm:flex-initial">
+                <Button onClick={handleProceed} className="w-full sm:w-auto">
                     {`Proceed to ${nextStatusMap[currentStatus]}`} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
             )}
