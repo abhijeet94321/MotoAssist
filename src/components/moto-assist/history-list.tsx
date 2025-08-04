@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -50,7 +51,62 @@ export default function HistoryList({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg overflow-hidden">
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+           {jobs.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">
+              No completed jobs in history yet.
+            </p>
+          ) : (
+            jobs.map((job) => (
+              <Card key={job.id} className="w-full">
+                <CardHeader>
+                   <CardTitle>{job.vehicleDetails.licensePlate}</CardTitle>
+                   <CardDescription>{job.vehicleDetails.userName}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-lg font-semibold text-right">
+                       ₹{job.serviceItems.reduce((acc, item) => acc + item.partsCost + item.laborCost, 0).toFixed(2)}
+                    </p>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewDetails(job)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" /> View
+                      </Button>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the
+                                      service record for {job.vehicleDetails.licensePlate}.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => onDelete(job.id)} className="bg-destructive hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                       </AlertDialog>
+                </CardFooter>
+              </Card>
+            ))
+           )}
+        </div>
+      
+        {/* Desktop View */}
+        <div className="hidden md:block border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

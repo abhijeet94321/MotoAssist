@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -50,7 +51,51 @@ export default function PaymentsList({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg overflow-hidden">
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+           {jobs.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">
+              No jobs are currently awaiting payment.
+            </p>
+          ) : (
+            jobs.map((job) => (
+               <Card key={job.id} className="w-full">
+                <CardHeader>
+                   <CardTitle>{job.vehicleDetails.vehicleModel}</CardTitle>
+                   <CardDescription>{job.vehicleDetails.licensePlate}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                   <div>
+                       <p className="font-medium">{job.vehicleDetails.userName}</p>
+                       <p className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</p>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <Badge variant="outline" className={statusBadgeVariants({ status: job.status })}>
+                          {job.status}
+                      </Badge>
+                      <Badge variant={job.payment.status.startsWith('Paid') ? 'default' : 'secondary'}>
+                          {job.payment.status}
+                      </Badge>
+                   </div>
+                </CardContent>
+                <CardFooter>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUpdateStatusClick(job)}
+                        disabled={job.status === 'Cycle Complete'}
+                        className="w-full"
+                    >
+                        {job.status === 'Billed' ? 'View Bill' : 'Generate Bill'}
+                    </Button>
+                </CardFooter>
+              </Card>
+            ))
+          )}
+        </div>
+      
+        {/* Desktop View */}
+        <div className="hidden md:block border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
