@@ -33,4 +33,5 @@ export type ServiceJob = {
     };
     isRepeat: boolean;
     intakeDate: string; // ISO string
+    mechanic?: string;
 };

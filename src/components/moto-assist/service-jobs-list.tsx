@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cva } from "class-variance-authority";
+import { UserCheck } from "lucide-react";
 
 type ServiceJobsListProps = {
   jobs: ServiceJob[];
@@ -69,6 +70,12 @@ export default function ServiceJobsList({
                        <p className="font-medium">{job.vehicleDetails.userName}</p>
                        <p className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</p>
                    </div>
+                   {job.status === 'In Progress' && job.mechanic && (
+                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                         <UserCheck className="h-4 w-4" />
+                         <span>Assigned to: {job.mechanic}</span>
+                       </div>
+                    )}
                    <div className="flex justify-between items-center">
                       <Badge variant="outline" className={statusBadgeVariants({ status: job.status })}>
                           {job.status}
@@ -102,7 +109,7 @@ export default function ServiceJobsList({
                 <TableHead>Customer</TableHead>
                 <TableHead>Vehicle</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
+                <TableHead>Assigned To</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -133,9 +140,14 @@ export default function ServiceJobsList({
                         </Badge>
                     </TableCell>
                     <TableCell>
-                        <Badge variant={job.payment.status.startsWith('Paid') ? 'default' : 'secondary'}>
-                            {job.payment.status}
-                        </Badge>
+                      {job.status === 'In Progress' && job.mechanic ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <UserCheck className="h-4 w-4" />
+                          <span>{job.mechanic}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

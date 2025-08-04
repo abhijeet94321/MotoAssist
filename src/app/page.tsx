@@ -78,6 +78,7 @@ export default function Home() {
       payment: { status: 'Pending' },
       isRepeat: isRepeatCustomer,
       intakeDate: new Date().toISOString(),
+      mechanic: '',
     };
     
     try {
@@ -116,11 +117,14 @@ export default function Home() {
     setView('update_status');
   };
 
-  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems']) => {
+  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string) => {
     const jobRef = doc(db, 'serviceJobs', jobId);
     const updateData: Partial<ServiceJob> = { status };
     if (items) {
       updateData.serviceItems = items;
+    }
+    if (mechanic) {
+      updateData.mechanic = mechanic;
     }
     
     try {

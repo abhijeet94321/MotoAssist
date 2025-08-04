@@ -24,6 +24,7 @@ import {
   Bike,
   User,
   MessageSquare,
+  UserCheck,
 } from "lucide-react";
 import ServiceLogger from "./service-logger";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +32,7 @@ import { Separator } from "../ui/separator";
 
 type ServiceStatusUpdaterProps = {
   job: ServiceJob;
-  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[]) => void;
+  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string) => void;
   onBack: () => void;
 };
 
@@ -47,6 +48,8 @@ const statusUpdateTextMap: Partial<Record<ServiceStatus, string>> = {
     'Billed': 'Hi {userName}, your bill for the service on your vehicle ({vehicleModel}) is ready. Please proceed with the payment.',
 };
 
+const MECHANICS = ["Suresh", "Ramesh", "Ganesh", "Mahesh"];
+
 
 export default function ServiceStatusUpdater({
   job,
@@ -56,9 +59,18 @@ export default function ServiceStatusUpdater({
     const { toast } = useToast();
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
+    const [assignedMechanic, setAssignedMechanic] = useState<string | undefined>(job.mechanic);
 
     const handleUpdate = () => {
-        onUpdate(job.id, currentStatus, serviceItems);
+        if (currentStatus === 'In Progress' && !assignedMechanic) {
+             toast({
+                title: "Mechanic Not Assigned",
+                description: "Please assign a mechanic to the job before saving.",
+                variant: "destructive"
+            });
+            return;
+        }
+        onUpdate(job.id, currentStatus, serviceItems, assignedMechanic);
     }
 
     const handleShareUpdate = () => {
@@ -90,7 +102,15 @@ export default function ServiceStatusUpdater({
     const handleProceed = () => {
         const nextStatus = nextStatusMap[currentStatus];
         if (nextStatus) {
-            onUpdate(job.id, nextStatus, serviceItems);
+            if (currentStatus === 'Service Required' && !assignedMechanic) {
+                toast({
+                    title: "Assign Mechanic",
+                    description: "Please assign a mechanic before proceeding to 'In Progress'.",
+                    variant: "destructive"
+                });
+                return;
+            }
+            onUpdate(job.id, nextStatus, serviceItems, assignedMechanic);
         }
     }
 
@@ -129,27 +149,47 @@ export default function ServiceStatusUpdater({
             </p>
         </div>
         
-        <div className="space-y-2">
-            <h3 className="font-semibold">Current Status</h3>
-             <div className="flex gap-2">
-                <Select onValueChange={(v) => setCurrentStatus(v as ServiceStatus)} value={currentStatus}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Update status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Service Required">Service Required</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Billed" disabled>Billed</SelectItem>
-                        <SelectItem value="Cycle Complete" disabled>Cycle Complete</SelectItem>
-                    </SelectContent>
-                </Select>
-                {statusUpdateTextMap[currentStatus] && (
-                     <Button variant="outline" size="icon" onClick={handleShareUpdate} aria-label="Share status update">
-                        <MessageSquare className="h-5 w-5"/>
-                    </Button>
-                )}
-             </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <h3 className="font-semibold">Current Status</h3>
+                 <div className="flex gap-2">
+                    <Select onValueChange={(v) => setCurrentStatus(v as ServiceStatus)} value={currentStatus}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Update status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Service Required">Service Required</SelectItem>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Billed" disabled>Billed</SelectItem>
+                            <SelectItem value="Cycle Complete" disabled>Cycle Complete</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {statusUpdateTextMap[currentStatus] && (
+                         <Button variant="outline" size="icon" onClick={handleShareUpdate} aria-label="Share status update">
+                            <MessageSquare className="h-5 w-5"/>
+                        </Button>
+                    )}
+                 </div>
+            </div>
+             {(currentStatus === 'In Progress' || (currentStatus === 'Service Required' && job.mechanic) || currentStatus === 'Completed' ) && (
+                 <div className="space-y-2">
+                    <h3 className="font-semibold">Assign Mechanic</h3>
+                    <Select onValueChange={setAssignedMechanic} value={assignedMechanic}>
+                        <SelectTrigger>
+                            <div className="flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-muted-foreground"/>
+                                <SelectValue placeholder="Select a mechanic" />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {MECHANICS.map(m => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                 </div>
+             )}
         </div>
         
         {currentStatus === 'In Progress' && (

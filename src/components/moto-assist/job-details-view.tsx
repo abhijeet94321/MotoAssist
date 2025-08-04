@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, UserCheck } from "lucide-react";
 import { Badge } from "../ui/badge";
 
 type JobDetailsViewProps = {
@@ -28,7 +28,7 @@ type JobDetailsViewProps = {
 };
 
 export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
-  const { vehicleDetails, serviceItems, payment, initialServiceRequest } = job;
+  const { vehicleDetails, serviceItems, payment, initialServiceRequest, mechanic } = job;
 
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
@@ -60,6 +60,15 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
             <h3 className="font-semibold mb-2">Vehicle</h3>
             <p>{vehicleDetails.vehicleModel}</p>
             <p>{vehicleDetails.licensePlate}</p>
+             {mechanic && (
+              <div className="mt-2">
+                <h3 className="font-semibold mb-1">Mechanic Assigned</h3>
+                <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-muted-foreground"/>
+                    <p>{mechanic}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
