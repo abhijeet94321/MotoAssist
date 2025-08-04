@@ -192,9 +192,9 @@ export default function Home() {
       default:
         return (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
               <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
-              <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing Services</TabsTrigger>
+              <TabsTrigger value="jobs"><List className="mr-2 h-4 w-4" /> Ongoing</TabsTrigger>
               <TabsTrigger value="payments"><IndianRupee className="mr-2 h-4 w-4" /> Payments</TabsTrigger>
               <TabsTrigger value="history"><History className="mr-2 h-4 w-4" /> History</TabsTrigger>
             </TabsList>
@@ -228,7 +228,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow container mx-auto p-4 sm:p-6 md:p-8">
-        <header className="mb-8 flex justify-between items-center">
+        <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-primary p-2 rounded-lg">
               <Wrench className="h-8 w-8 text-primary-foreground" />
@@ -243,7 +243,7 @@ export default function Home() {
             </div>
           </div>
            {view === 'main' && (
-             <Button onClick={handleNewServiceClick}>
+             <Button onClick={handleNewServiceClick} className="w-full sm:w-auto">
                <PlusCircle className="mr-2 h-4 w-4" /> New Service
              </Button>
            )}
