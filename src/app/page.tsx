@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { ServiceJob } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import PaymentsList from '@/components/moto-assist/payments-list';
 import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,19 +36,42 @@ export default function Home() {
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const jobs: ServiceJob[] = [];
+      querySnapshot.forEach((doc) => {
+        jobs.push({ id: doc.id, ...doc.data() } as ServiceJob);
+      });
+      setServiceJobs(jobs);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching service jobs: ", error);
+      toast({
+        title: "Error fetching data",
+        description: "Could not connect to the database. Please check your connection and Firebase setup.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
+
 
   const handleNewServiceClick = () => {
     setActiveJob(null);
     setView('new_service');
   };
   
-  const handleIntakeSubmit = (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment'>) => {
+  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment'>) => {
     const isRepeatCustomer = serviceJobs.some(
       (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
     );
 
-    const newJob: ServiceJob = {
-      id: crypto.randomUUID(),
+    const newJobData = {
       ...data,
       status: 'Service Required',
       serviceItems: [],
@@ -54,23 +79,36 @@ export default function Home() {
       isRepeat: isRepeatCustomer,
       intakeDate: new Date().toISOString(),
     };
-    setServiceJobs(prev => [...prev, newJob]);
     
-    // Send WhatsApp Welcome Message
-    const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
-    const message = `Thank you for choosing SAIKRUPA SERVICE CENTER, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
-    const encodedText = encodeURIComponent(message);
-    const mobileNumber = mobile.replace(/\D/g, '');
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
-    
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-    
-    toast({
-      title: "Welcome Message Sent",
-      description: "A welcome message has been prepared to send via WhatsApp.",
-    });
+    try {
+      const docRef = await addDoc(collection(db, 'serviceJobs'), newJobData);
+      
+      const newJob: ServiceJob = { ...newJobData, id: docRef.id };
 
-    setView('main');
+      // Send WhatsApp Welcome Message
+      const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
+      const message = `Thank you for choosing SAIKRUPA SERVICE CENTER, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+      const encodedText = encodeURIComponent(message);
+      const mobileNumber = mobile.replace(/\D/g, '');
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
+      
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      
+      toast({
+        title: "Welcome Message Sent",
+        description: "A welcome message has been prepared to send via WhatsApp.",
+      });
+
+      setView('main');
+
+    } catch (error) {
+       console.error("Error adding document: ", error);
+       toast({
+        title: "Error Creating Job",
+        description: "Could not save the new service job. Please try again.",
+        variant: "destructive",
+       });
+    }
   };
 
   const handleUpdateStatusClick = (job: ServiceJob) => {
@@ -78,37 +116,66 @@ export default function Home() {
     setView('update_status');
   };
 
-  const handleStatusUpdate = (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems']) => {
-    setServiceJobs(prev => prev.map(job => {
-      if (job.id === jobId) {
-        const updatedJob = { ...job, status };
-        if (items) {
-          updatedJob.serviceItems = items;
+  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems']) => {
+    const jobRef = doc(db, 'serviceJobs', jobId);
+    const updateData: Partial<ServiceJob> = { status };
+    if (items) {
+      updateData.serviceItems = items;
+    }
+    
+    try {
+      await updateDoc(jobRef, updateData);
+      if (status === 'Billed') {
+        // Find the full job object to pass to the billing view
+        const updatedJob = serviceJobs.find(j => j.id === jobId);
+        if (updatedJob) {
+           setActiveJob({ ...updatedJob, ...updateData });
+           setView('billing');
         }
-        if (status === 'Billed') {
-          setActiveJob(updatedJob);
-          setView('billing');
-        } else {
-          setView('main');
-        }
-        return updatedJob;
+      } else {
+        setView('main');
       }
-      return job;
-    }));
+      toast({
+        title: "Status Updated",
+        description: `Job status has been updated to ${status}.`,
+      });
+    } catch (error) {
+       console.error("Error updating document: ", error);
+       toast({
+        title: "Error Updating Status",
+        description: "Could not update the job status. Please try again.",
+        variant: "destructive",
+       });
+    }
   };
 
-  const handlePaymentUpdate = (jobId: string, paymentStatus: ServiceJob['payment']['status']) => {
-     setServiceJobs(prev => prev.map(job => {
-        if (job.id === jobId) {
-            const updatedJob = { ...job, status: 'Completed', payment: { status: paymentStatus } };
-            if (paymentStatus === 'Paid - Cash' || paymentStatus === 'Paid - Online') {
-                updatedJob.status = 'Cycle Complete';
-            }
-            return updatedJob;
-        }
-        return job;
-     }));
-     setView('main');
+  const handlePaymentUpdate = async (jobId: string, paymentStatus: ServiceJob['payment']['status']) => {
+     const jobRef = doc(db, 'serviceJobs', jobId);
+     const updateData: Partial<ServiceJob> = { 
+        payment: { status: paymentStatus } 
+     };
+     
+     if (paymentStatus === 'Paid - Cash' || paymentStatus === 'Paid - Online') {
+        updateData.status = 'Cycle Complete';
+     } else {
+        updateData.status = 'Completed'; // Revert to completed if payment is undone
+     }
+
+     try {
+        await updateDoc(jobRef, updateData);
+        toast({
+          title: "Payment Updated",
+          description: `Payment status has been updated.`,
+        });
+        setView('main');
+     } catch (error) {
+        console.error("Error updating payment: ", error);
+        toast({
+          title: "Error Updating Payment",
+          description: "Could not update the payment status. Please try again.",
+          variant: "destructive",
+        });
+     }
   };
   
   const handleViewDetails = (job: ServiceJob) => {
@@ -116,12 +183,21 @@ export default function Home() {
     setView('view_details');
   };
 
-  const handleDeleteJob = (jobId: string) => {
-    setServiceJobs(prev => prev.filter(job => job.id !== jobId));
-    toast({
-        title: "Job Deleted",
-        description: "The service record has been permanently removed.",
-    });
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      await deleteDoc(doc(db, 'serviceJobs', jobId));
+      toast({
+          title: "Job Deleted",
+          description: "The service record has been permanently removed.",
+      });
+    } catch (error) {
+       console.error("Error deleting document: ", error);
+       toast({
+          title: "Error Deleting Job",
+          description: "Could not delete the job. Please try again.",
+          variant: "destructive",
+       });
+    }
   };
 
   const handleBackToMain = () => {
@@ -149,6 +225,10 @@ export default function Home() {
 
 
   const renderView = () => {
+    if (loading) {
+      return <div className="text-center py-10">Loading service data...</div>;
+    }
+    
     switch (view) {
       case 'new_service':
         return (
