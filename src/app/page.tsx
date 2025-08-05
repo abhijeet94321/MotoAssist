@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
-const ADMIN_UIDS = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1"]; // IMPORTANT: List of Admin User IDs
+const ADMIN_UIDS = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1", "z5WLbk3A0tVhlAh597XnI6c8gYx2"]; // IMPORTANT: List of Admin User IDs
 
 export default function Home() {
   const [view, setView] = useState<View>('main');
