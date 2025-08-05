@@ -45,12 +45,7 @@ export default function Home() {
 
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-        // AuthProvider should handle the redirect
-        setLoading(false);
-        return;
-    }
+    if (!user) return; // Wait for the user to be authenticated
 
     setLoading(true);
 
@@ -93,7 +88,7 @@ export default function Home() {
       unsubscribeJobs();
       unsubscribeMechanics();
     };
-  }, [toast, user, authLoading]);
+  }, [toast, user]);
 
 
   const handleNewServiceClick = () => {
@@ -297,7 +292,7 @@ export default function Home() {
 
 
   const renderView = () => {
-    if (loading || authLoading) {
+    if (loading) {
       return <div className="text-center py-10">Loading service data...</div>;
     }
     
@@ -385,6 +380,10 @@ export default function Home() {
         );
     }
   };
+
+  if (authLoading) {
+    return <div className="text-center py-10">Authenticating...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

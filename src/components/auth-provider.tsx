@@ -45,19 +45,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
     router.push('/login');
   };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
   
   const isAuthPage = pathname === '/login' || pathname === '/register';
-  if (!user && !isAuthPage) {
-    return <div className="min-h-screen flex items-center justify-center">Redirecting to login...</div>;
-  }
-  if (user && isAuthPage) {
-    return <div className="min-h-screen flex items-center justify-center">Redirecting to dashboard...</div>
+  
+  // While loading, or if we are on an auth page, we can render the children
+  // immediately. The redirect logic will handle moving the user if necessary
+  // once loading is complete.
+  if (loading || isAuthPage) {
+     return (
+        <AuthContext.Provider value={{ user, loading, signOut: handleSignOut }}>
+            {children}
+        </AuthContext.Provider>
+     );
   }
 
+  // If not loading and not on an auth page, but there's no user,
+  // we don't render children to prevent a flash of content.
+  // The useEffect above will handle the redirect.
+  if (!user) {
+    return null; 
+  }
+
+  // If we have a user and are not on an auth page, render the children.
   return (
     <AuthContext.Provider value={{ user, loading, signOut: handleSignOut }}>
       {children}
