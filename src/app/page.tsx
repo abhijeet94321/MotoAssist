@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
-const ADMIN_UID = "Pub9DGemRlNCdV39mXXTCI8N0YN2"; // IMPORTANT: Replace with your actual Admin User ID
+const ADMIN_UIDS = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1"]; // IMPORTANT: List of Admin User IDs
 
 export default function Home() {
   const [view, setView] = useState<View>('main');
@@ -46,7 +46,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading, signOut } = useAuth();
   
-  const isAdmin = useMemo(() => user?.uid === ADMIN_UID, [user]);
+  const isAdmin = useMemo(() => user?.uid ? ADMIN_UIDS.includes(user.uid) : false, [user]);
 
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function Home() {
 
     setLoading(true);
     
-    const isUserAdmin = user.uid === ADMIN_UID;
+    const isUserAdmin = user.uid ? ADMIN_UIDS.includes(user.uid) : false;
 
     // Define base queries
     let jobsQuery: Query = collection(db, "serviceJobs");
