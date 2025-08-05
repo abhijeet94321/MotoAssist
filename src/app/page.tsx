@@ -145,7 +145,7 @@ export default function Home() {
 
       // Send WhatsApp Welcome Message
       const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
-      const message = `Thank you for choosing SAIKRUPA SERVICE CENTER, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+      const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
       const encodedText = encodeURIComponent(message);
       const mobileNumber = mobile.replace(/\D/g, '');
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
@@ -426,7 +426,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                SAIKRUPA SERVICE CENTER
+                MotoAssist
               </h1>
               <p className="text-muted-foreground">
                 {isAdmin ? 'Admin Dashboard' : 'Your complete service management solution.'}

@@ -4,13 +4,13 @@ import './globals.css';
 import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
-  title: 'SAIKRUPA SERVICE CENTER',
+  title: 'MotoAssist',
   description: 'Your one-stop solution for two-wheeler service management.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SAIKRUPA SERVICE CENTER',
+    title: 'MotoAssist',
   },
 };
 

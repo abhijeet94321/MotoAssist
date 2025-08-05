@@ -91,7 +91,7 @@ export default function BillPreview({
   );
 
   const generateBillText = () => {
-    let text = `*SAIKRUPA SERVICE CENTER Service Bill*\n\n`;
+    let text = `*MotoAssist Service Bill*\n\n`;
     text += `*Date:* ${new Date().toLocaleDateString()}\n\n`;
     text += `*Customer Details*\n`;
     text += `Name: ${vehicleDetails.userName}\n`;
@@ -109,7 +109,7 @@ export default function BillPreview({
     });
     text += `--------------------\n`;
     text += `*TOTAL AMOUNT: ₹${totalCost.toFixed(2)}*\n\n`;
-    text += `Thank you for choosing SAIKRUPA SERVICE CENTER!`;
+    text += `Thank you for choosing MotoAssist!`;
     return text;
   };
 
