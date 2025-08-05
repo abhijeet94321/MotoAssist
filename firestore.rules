@@ -3,26 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isAppAdmin() {
-      // Admin UIDs can access all data
-      let admin_uids = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1", "z5WLbk3A0tVhlAh597XnI6c8gYx2"];
-      return request.auth.uid in admin_uids;
-    }
-
+    // Allow any authenticated user to read and write to the serviceJobs collection.
     match /serviceJobs/{jobId} {
-      // Admins can do anything.
-      // Regular users can only read/write jobs where their UID matches the job's userId.
-      allow read, write: if isAppAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
-      allow create: if request.auth != null;
-      allow delete: if isAppAdmin();
+      allow read, write: if request.auth != null;
     }
 
+    // Allow any authenticated user to read and write to the mechanics collection.
     match /mechanics/{mechanicId} {
-        // Admins can do anything.
-        // Regular users can read/write mechanics they created.
-        allow read, write: if isAppAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
-        allow create: if request.auth != null;
-        allow delete: if isAppAdmin();
+      allow read, write: if request.auth != null;
     }
   }
 }

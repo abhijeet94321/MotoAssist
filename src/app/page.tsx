@@ -17,7 +17,7 @@ import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
 import MechanicSettings from '@/components/moto-assist/mechanic-settings';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, Query } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,8 +35,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
-const ADMIN_UIDS = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1", "z5WLbk3A0tVhlAh597XnI6c8gYx2"]; // IMPORTANT: List of Admin User IDs
-
 export default function Home() {
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
@@ -46,31 +44,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading, signOut } = useAuth();
   
-  const isAdmin = useMemo(() => user?.uid ? ADMIN_UIDS.includes(user.uid) : false, [user]);
-
-
   useEffect(() => {
     if (!user) return; // Wait for the user to be authenticated
 
     setLoading(true);
     
-    const isUserAdmin = user.uid ? ADMIN_UIDS.includes(user.uid) : false;
-
-    // Define base queries
-    let jobsQuery: Query = collection(db, "serviceJobs");
-    let mechanicsQuery: Query = collection(db, "mechanics");
-
-    // Adjust queries based on user role
-    if (isUserAdmin) {
-        // Admin sees all jobs and mechanics, ordered as before
-        jobsQuery = query(jobsQuery, orderBy("intakeDate", "desc"));
-        mechanicsQuery = query(mechanicsQuery, orderBy("name"));
-    } else {
-        // Regular user only sees their own data
-        jobsQuery = query(jobsQuery, where("userId", "==", user.uid), orderBy("intakeDate", "desc"));
-        mechanicsQuery = query(mechanicsQuery, where("userId", "==", user.uid), orderBy("name"));
-    }
-
+    // Now that rules are open, queries are simpler.
+    const jobsQuery = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
+    const mechanicsQuery = query(collection(db, "mechanics"), orderBy("name"));
 
     const unsubscribeJobs = onSnapshot(jobsQuery, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
@@ -429,7 +410,7 @@ export default function Home() {
                 MotoAssist
               </h1>
               <p className="text-muted-foreground">
-                {isAdmin ? 'Admin Dashboard' : 'Your complete service management solution.'}
+                Your complete service management solution.
               </p>
             </div>
           </div>
