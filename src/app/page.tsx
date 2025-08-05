@@ -16,7 +16,7 @@ import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
 import MechanicSettings from '@/components/moto-assist/mechanic-settings';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,7 +49,12 @@ export default function Home() {
 
     setLoading(true);
 
-    const qJobs = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
+    // Query jobs for the current user
+    const qJobs = query(
+        collection(db, "serviceJobs"), 
+        where("userId", "==", user.uid),
+        orderBy("intakeDate", "desc")
+    );
     const unsubscribeJobs = onSnapshot(qJobs, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
       querySnapshot.forEach((doc) => {
@@ -67,7 +72,12 @@ export default function Home() {
       setLoading(false);
     });
 
-    const qMechanics = query(collection(db, "mechanics"), orderBy("name"));
+    // Query mechanics for the current user
+    const qMechanics = query(
+        collection(db, "mechanics"), 
+        where("userId", "==", user.uid),
+        orderBy("name")
+    );
     const unsubscribeMechanics = onSnapshot(qMechanics, (querySnapshot) => {
       const mechanicList: Mechanic[] = [];
       querySnapshot.forEach((doc) => {
@@ -96,13 +106,19 @@ export default function Home() {
     setView('new_service');
   };
   
-  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic'>) => {
+  const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic' | 'userId'>) => {
+    if (!user) {
+        toast({ title: "Not Authenticated", description: "You must be logged in to create a job.", variant: "destructive"});
+        return;
+    }
+
     const isRepeatCustomer = serviceJobs.some(
       (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
     );
 
     const newJobData = {
       ...data,
+      userId: user.uid,
       status: 'Service Required',
       serviceItems: [],
       payment: { status: 'Pending' },
@@ -238,9 +254,9 @@ export default function Home() {
   };
 
   const handleAddMechanic = async (name: string) => {
-    if (!name) return;
+    if (!name || !user) return;
     try {
-        await addDoc(collection(db, 'mechanics'), { name });
+        await addDoc(collection(db, 'mechanics'), { name, userId: user.uid });
         toast({
             title: "Mechanic Added",
             description: `${name} has been added to the list.`,
@@ -383,6 +399,10 @@ export default function Home() {
 
   if (authLoading) {
     return <div className="text-center py-10">Authenticating...</div>;
+  }
+  
+  if (!user && !authLoading) {
+    return <div className="text-center py-10">Please log in to continue.</div>;
   }
 
   return (

@@ -24,6 +24,7 @@ export type PaymentStatus = 'Pending' | 'Paid - Cash' | 'Paid - Online';
 
 export type ServiceJob = {
     id: string;
+    userId: string; // Added to associate job with a user
     vehicleDetails: VehicleDetails;
     initialServiceRequest: string;
     status: ServiceStatus;
@@ -38,5 +39,6 @@ export type ServiceJob = {
 
 export type Mechanic = {
     id: string;
+    userId: string; // Added to associate mechanic with a user
     name: string;
 };
