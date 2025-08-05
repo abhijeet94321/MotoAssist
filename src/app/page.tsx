@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
-const ADMIN_UID = "YOUR_ADMIN_UID_HERE"; // IMPORTANT: Replace with your actual Admin User ID
+const ADMIN_UID = "Pub9DGemRlNCdV39mXXTCI8N0YN2"; // IMPORTANT: Replace with your actual Admin User ID
 
 export default function Home() {
   const [view, setView] = useState<View>('main');
@@ -469,5 +469,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
