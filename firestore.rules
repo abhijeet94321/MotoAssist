@@ -3,26 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isAdmin() {
-      return request.auth.uid == "Pub9DGemRlNCdV39mXXTCI8N0YN2";
-    }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function isAppAdmin() {
+      // Admin UIDs can access all data
+      let admin_uids = ["Pub9DGemRlNCdV39mXXTCI8N0YN2", "efh8v10H8Cfrcx3CsCrbLGExx5r1", "z5WLbk3A0tVhlAh597XnI6c8gYx2"];
+      return request.auth.uid in admin_uids;
     }
 
     match /serviceJobs/{jobId} {
-      // Admin can do anything
-      // Regular users can create their own jobs
-      // Regular users can read, update, delete their own jobs
-      allow read, write: if isAdmin() || (request.method == 'create' && isOwner(request.resource.data.userId)) || (request.method != 'create' && isOwner(resource.data.userId));
+      // Admins can do anything.
+      // Regular users can only read/write jobs where their UID matches the job's userId.
+      allow read, write: if isAppAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow create: if request.auth != null;
+      allow delete: if isAppAdmin();
     }
 
     match /mechanics/{mechanicId} {
-      // Admin can do anything
-      // Regular users can create their own mechanics
-      // Regular users can read, update, delete their own mechanics
-      allow read, write: if isAdmin() || (request.method == 'create' && isOwner(request.resource.data.userId)) || (request.method != 'create' && isOwner(resource.data.userId));
+        // Admins can do anything.
+        // Regular users can read/write mechanics they created.
+        allow read, write: if isAppAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
+        allow create: if request.auth != null;
+        allow delete: if isAppAdmin();
     }
   }
 }
