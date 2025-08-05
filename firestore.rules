@@ -1,16 +1,13 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to the serviceJobs collection for any authenticated user.
-    match /serviceJobs/{jobId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Allow read/write access to the mechanics collection for any authenticated user.
-    match /mechanics/{mechanicId} {
-      allow read, write: if request.auth != null;
+    
+    // Warning: These rules are insecure and are meant for development only.
+    // They allow public read and write access to your entire database.
+    // Before deploying to production, you must secure your rules.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
