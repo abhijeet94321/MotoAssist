@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'SAIKRUPA SERVICE CENTER',
@@ -37,8 +38,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        {children}
-        <Toaster />
+        <AuthProvider>
+            {children}
+            <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -5,7 +5,7 @@ import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -28,6 +28,9 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/components/auth-provider';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
@@ -38,8 +41,17 @@ export default function Home() {
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading, signOut } = useAuth();
+
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+        // AuthProvider should handle the redirect
+        setLoading(false);
+        return;
+    }
+
     setLoading(true);
 
     const qJobs = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
@@ -81,7 +93,7 @@ export default function Home() {
       unsubscribeJobs();
       unsubscribeMechanics();
     };
-  }, [toast]);
+  }, [toast, user, authLoading]);
 
 
   const handleNewServiceClick = () => {
@@ -285,7 +297,7 @@ export default function Home() {
 
 
   const renderView = () => {
-    if (loading) {
+    if (loading || authLoading) {
       return <div className="text-center py-10">Loading service data...</div>;
     }
     
@@ -392,6 +404,19 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+             {user && (
+                 <div className="flex items-center gap-3">
+                     <Avatar className="h-9 w-9">
+                         <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                     </Avatar>
+                     <div className="text-sm text-right">
+                         <p className="font-medium text-foreground">{user.email}</p>
+                         <Button variant="link" className="p-0 h-auto text-xs" onClick={signOut}>
+                            Sign Out <LogOut className="ml-2 h-3 w-3" />
+                         </Button>
+                     </div>
+                 </div>
+             )}
             {view === 'main' && (
               <Button onClick={handleNewServiceClick} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" /> New Service
