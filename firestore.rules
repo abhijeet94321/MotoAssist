@@ -2,42 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Variable to hold the UID of the admin user
-    let ADMIN_UID = 'Pub9DGemRlNCdV39mXXTCI8N0YN2';
-
-    // Helper function to check if a user is the designated admin
+    
     function isAdmin() {
-      return request.auth.uid == ADMIN_UID;
-    }
-
-    // Helper function to check if a user is the owner of a document
-    function isOwner(docData) {
-      return request.auth.uid == docData.userId;
-    }
-
-    // Rules for the 'serviceJobs' collection
-    match /serviceJobs/{jobId} {
-      // Admin can perform any action on any job
-      // Regular users can only create jobs for themselves, and can read, 
-      // update, or delete their own jobs.
-      allow read: if isAdmin() || (request.auth.uid != null && isOwner(resource.data));
-      allow create: if request.auth.uid != null && isOwner(request.resource.data);
-      allow update, delete: if isAdmin() || (request.auth.uid != null && isOwner(resource.data));
+      return request.auth.uid == "Pub9DGemRlNCdV39mXXTCI8N0YN2";
     }
     
-    // Rules for the 'mechanics' collection
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /serviceJobs/{jobId} {
+      // Admin can do anything
+      // Regular users can create their own jobs
+      // Regular users can read, update, delete their own jobs
+      allow read, write: if isAdmin() || (request.method == 'create' && isOwner(request.resource.data.userId)) || (request.method != 'create' && isOwner(resource.data.userId));
+    }
+
     match /mechanics/{mechanicId} {
-        // Admin can read all mechanics
-        // Regular authenticated users can read mechanics associated with their userId
-        allow read: if isAdmin() || (request.auth.uid != null && isOwner(resource.data));
-
-        // Any authenticated user can create a mechanic for themselves
-        allow create: if request.auth.uid != null && isOwner(request.resource.data);
-
-        // Admin can update/delete any mechanic
-        // Regular users can only update/delete their own mechanics
-        allow update, delete: if isAdmin() || (request.auth.uid != null && isOwner(resource.data));
+      // Admin can do anything
+      // Regular users can create their own mechanics
+      // Regular users can read, update, delete their own mechanics
+      allow read, write: if isAdmin() || (request.method == 'create' && isOwner(request.resource.data.userId)) || (request.method != 'create' && isOwner(resource.data.userId));
     }
   }
 }
