@@ -5,7 +5,7 @@ import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, User as UserIcon } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -17,6 +17,7 @@ import JobDetailsView from '@/components/moto-assist/job-details-view';
 import MechanicSettings from '@/components/moto-assist/mechanic-settings';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -28,11 +29,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/components/auth-provider';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
 export default function Home() {
+  const { user } = useAuth();
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
@@ -41,6 +45,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only fetch data if the user is authenticated
+    if (!user) {
+      setLoading(false);
+      return;
+    };
+
+    setLoading(true);
+
     const qJobs = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
     const unsubscribeJobs = onSnapshot(qJobs, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
@@ -80,7 +92,7 @@ export default function Home() {
       unsubscribeJobs();
       unsubscribeMechanics();
     };
-  }, [toast]);
+  }, [toast, user]);
 
 
   const handleNewServiceClick = () => {
@@ -264,6 +276,12 @@ export default function Home() {
     }
   };
   
+  const handleSignOut = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    // The AuthProvider will handle the redirect to the login page
+  };
+
   const ongoingJobs = useMemo(() => {
     return serviceJobs.filter(
       (job) => job.status === 'Service Required' || job.status === 'In Progress'
@@ -390,11 +408,26 @@ export default function Home() {
               </p>
             </div>
           </div>
-           {view === 'main' && (
-             <Button onClick={handleNewServiceClick} className="w-full sm:w-auto">
-               <PlusCircle className="mr-2 h-4 w-4" /> New Service
-             </Button>
-           )}
+          <div className="flex items-center gap-4">
+            {view === 'main' && (
+              <Button onClick={handleNewServiceClick} className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" /> New Service
+              </Button>
+            )}
+             {user && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
+                  <AvatarFallback>
+                    <UserIcon/>
+                  </AvatarFallback>
+                </Avatar>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                </Button>
+              </div>
+            )}
+           </div>
         </header>
 
         <div className="relative">
