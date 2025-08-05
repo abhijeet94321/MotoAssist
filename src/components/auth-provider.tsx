@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { db } from '@/lib/firebase'; // Import db to ensure Firebase is initialized
+import { auth } from '@/lib/firebase'; // Import auth from your firebase config
 
 const AuthContext = createContext<{ user: User | null; loading: boolean, signOut: () => void; }>({
   user: null,
@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const auth = getAuth();
+    // Use the imported auth object directly
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -41,22 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
   const handleSignOut = async () => {
-    const auth = getAuth();
     await signOut(auth);
     router.push('/login');
   };
-  
-  if (loading) {
-    return <div className="text-center py-10">Authenticating...</div>;
-  }
-  
+
   const isAuthPage = pathname === '/login' || pathname === '/register';
-  if (!user && !isAuthPage) {
-    return <div className="text-center py-10">Redirecting to login...</div>;
-  }
-  
-  if (user && isAuthPage) {
-    return <div className="text-center py-10">Redirecting to dashboard...</div>;
+  if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
+      return <div className="text-center py-10">Loading...</div>;
   }
 
   return (
