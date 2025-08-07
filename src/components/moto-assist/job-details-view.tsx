@@ -19,8 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, CheckCircle, UserCheck } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, UserCheck, BellRing } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { format } from 'date-fns';
+
 
 type JobDetailsViewProps = {
   job: ServiceJob;
@@ -28,7 +30,7 @@ type JobDetailsViewProps = {
 };
 
 export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
-  const { vehicleDetails, serviceItems, payment, initialServiceRequest, mechanic } = job;
+  const { vehicleDetails, serviceItems, payment, initialServiceRequest, mechanic, nextServiceDate } = job;
   const vehicleModelString = typeof vehicleDetails.vehicleModel === 'string' 
     ? vehicleDetails.vehicleModel 
     : `${vehicleDetails.vehicleModel.brand} ${vehicleDetails.vehicleModel.model}`;
@@ -117,12 +119,23 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
         <Separator />
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold">Payment Status:</h3>
-            <Badge variant="default" className="bg-emerald-600 text-white">
-                <CheckCircle className="mr-2 h-4 w-4"/>
-                {payment.status}
-            </Badge>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+                <h3 className="font-semibold">Payment Status:</h3>
+                <Badge variant="default" className="bg-emerald-600 text-white">
+                    <CheckCircle className="mr-2 h-4 w-4"/>
+                    {payment.status}
+                </Badge>
+            </div>
+            {nextServiceDate && (
+                 <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Next Service Due:</h3>
+                    <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
+                        <BellRing className="mr-2 h-4 w-4"/>
+                        {format(new Date(nextServiceDate), 'PPP')}
+                    </Badge>
+                </div>
+            )}
           </div>
           <div className="text-right w-full sm:w-auto">
             <p className="text-muted-foreground">Total Amount Paid</p>
