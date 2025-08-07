@@ -247,13 +247,9 @@ export default function Home() {
     try {
       await updateDoc(jobRef, updateData as any);
       
-      // THIS IS THE CRITICAL FIX: Create the new job object by merging the original with all updates.
       const updatedJob: ServiceJob = {
         ...originalJob,
-        status,
-        ...(items && { serviceItems: items }),
-        ...(mechanic !== undefined && { mechanic }),
-        ...(nextServiceDate && { nextServiceDate }),
+        ...updateData
       };
 
       // Update the local state so the UI reflects the change immediately.
@@ -414,9 +410,21 @@ export default function Home() {
   }, [serviceJobs]);
   
   const completedJobs = useMemo(() => {
-    return serviceJobs.filter(
-      (job) => job.status === 'Cycle Complete'
-    );
+    return serviceJobs
+      .filter((job) => job.status === 'Cycle Complete')
+      .sort((a, b) => {
+        // Jobs with a nextServiceDate should come first
+        if (a.nextServiceDate && b.nextServiceDate) {
+          // Sort by the soonest date
+          return new Date(a.nextServiceDate).getTime() - new Date(b.nextServiceDate).getTime();
+        }
+        // If only 'a' has a date, it comes first
+        if (a.nextServiceDate) return -1;
+        // If only 'b' has a date, it comes first
+        if (b.nextServiceDate) return 1;
+        // Otherwise, sort by intakeDate as a fallback (most recent first)
+        return new Date(b.intakeDate).getTime() - new Date(a.intakeDate).getTime();
+      });
   }, [serviceJobs]);
 
 
