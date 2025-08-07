@@ -195,13 +195,17 @@ export default function VehicleDataManagement() {
           {Object.keys(vehicleData).sort().map(brand => (
             <Card key={brand} className="overflow-hidden">
               <AccordionItem value={brand} className="border-0">
-                <AccordionTrigger className="flex items-center gap-2 p-4 bg-muted/50 hover:no-underline">
-                   <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                   <span className="text-lg font-semibold flex-1 text-left">{brand}</span>
-                   <Button variant="destructive" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
+                <div className="flex items-center p-4 bg-muted/50">
+                    <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
+                       <div className="flex items-center gap-2">
+                         <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                         <span className="text-lg font-semibold">{brand}</span>
+                       </div>
+                    </AccordionTrigger>
+                   <Button variant="destructive" size="icon" className="h-8 w-8 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
                        <Trash2 className="h-4 w-4"/>
                    </Button>
-                </AccordionTrigger>
+                </div>
                 <AccordionContent className="p-4 space-y-4">
                   
                    {Object.keys(vehicleData[brand]).map(emissionType => (
