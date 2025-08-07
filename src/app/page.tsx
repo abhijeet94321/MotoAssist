@@ -5,7 +5,7 @@ import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, Database } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, Database, Send, Trash2 } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -44,6 +44,7 @@ export default function Home() {
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [activeJob, setActiveJob] = useState<ServiceJob | null>(null);
+  const [pendingJobForConfirmation, setPendingJobForConfirmation] = useState<ServiceJob | null>(null);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading, signOut } = useAuth();
@@ -113,6 +114,21 @@ export default function Home() {
     setActiveJob(null);
     setView('new_service');
   };
+
+  const deleteJobFromDb = async (jobId: string) => {
+    try {
+      await deleteDoc(doc(db, 'serviceJobs', jobId));
+      return true;
+    } catch (error) {
+       console.error("Error deleting document: ", error);
+       toast({
+          title: "Error Deleting Job",
+          description: "Could not delete the job. Please try again.",
+          variant: "destructive",
+       });
+       return false;
+    }
+  };
   
   const handleIntakeSubmit = async (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic' | 'userId'>) => {
     if (!user) {
@@ -122,6 +138,7 @@ export default function Home() {
 
     const isRepeatCustomer = serviceJobs.some(
       (job) => {
+        // Ensure mobile is a string before comparing
         const mobile = typeof job.vehicleDetails.mobile === 'string' ? job.vehicleDetails.mobile : '';
         return mobile === data.vehicleDetails.mobile;
       }
@@ -140,22 +157,14 @@ export default function Home() {
     
     try {
       const docRef = await addDoc(collection(db, 'serviceJobs'), newJobData);
-      
       const newJob: ServiceJob = { ...newJobData, id: docRef.id };
+      
+      // Set job for confirmation instead of sending message directly
+      setPendingJobForConfirmation(newJob);
 
-      // Send WhatsApp Welcome Message
-      const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
-      const vehicleModelString = typeof vehicleModel === 'string' ? vehicleModel : `${vehicleModel.brand} ${vehicleModel.model}`;
-      const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModelString}, ${licensePlate}) for service. We will keep you updated on the progress.`;
-      const encodedText = encodeURIComponent(message);
-      const mobileNumber = mobile.replace(/\D/g, '');
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
-      
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-      
       toast({
-        title: "Welcome Message Sent",
-        description: "A welcome message has been prepared to send via WhatsApp.",
+        title: "Job Created",
+        description: "Please confirm to send a welcome message to the customer.",
       });
 
       setView('main');
@@ -169,6 +178,45 @@ export default function Home() {
        });
     }
   };
+
+  const handleConfirmAndSend = () => {
+    if (!pendingJobForConfirmation) return;
+
+    const { userName, vehicleModel, licensePlate, mobile } = pendingJobForConfirmation.vehicleDetails;
+    const vehicleModelString = typeof vehicleModel === 'string' ? vehicleModel : `${vehicleModel.brand} ${vehicleModel.model}`;
+    const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModelString}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+    const encodedText = encodeURIComponent(message);
+    const mobileNumber = mobile.replace(/\D/g, '');
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
+    
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    
+    toast({
+      title: "Welcome Message Sent",
+      description: "A welcome message has been prepared to send via WhatsApp.",
+    });
+
+    setPendingJobForConfirmation(null); // Close the dialog
+  };
+
+  const handleCancelAndCloseDialog = () => {
+    setPendingJobForConfirmation(null);
+  };
+  
+  const handleCancelAndDeleteJob = async () => {
+    if (!pendingJobForConfirmation) return;
+    
+    const success = await deleteJobFromDb(pendingJobForConfirmation.id);
+    if(success) {
+        toast({
+            title: "Job Canceled",
+            description: "The new service job has been deleted.",
+            variant: "destructive",
+        });
+    }
+    setPendingJobForConfirmation(null); // Close the dialog
+  };
+
 
   const handleUpdateStatusClick = (job: ServiceJob) => {
     setActiveJob(job);
@@ -233,7 +281,6 @@ export default function Home() {
         toast({
           title: "Error Updating Payment",
           description: "Could not update the payment status. Please try again.",
-          variant: "destructive",
         });
      }
   };
@@ -244,19 +291,12 @@ export default function Home() {
   };
 
   const handleDeleteJob = async (jobId: string) => {
-    try {
-      await deleteDoc(doc(db, 'serviceJobs', jobId));
+    const success = await deleteJobFromDb(jobId);
+    if (success) {
       toast({
           title: "Job Deleted",
           description: "The service record has been permanently removed.",
       });
-    } catch (error) {
-       console.error("Error deleting document: ", error);
-       toast({
-          title: "Error Deleting Job",
-          description: "Could not delete the job. Please try again.",
-          variant: "destructive",
-       });
     }
   };
 
@@ -295,7 +335,6 @@ export default function Home() {
         toast({
             title: "Error Deleting Mechanic",
             description: "Could not delete the mechanic. Please try again.",
-            variant: "destructive",
         });
     }
   };
@@ -424,6 +463,7 @@ export default function Home() {
   }
 
   return (
+    <>
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow container mx-auto p-4 sm:p-6 md:p-8">
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -479,5 +519,29 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    
+    <AlertDialog open={!!pendingJobForConfirmation} onOpenChange={(open) => !open && handleCancelAndCloseDialog()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm New Service Job</AlertDialogTitle>
+          <AlertDialogDescription>
+            A new job has been created for vehicle license plate{' '}
+            <span className="font-bold text-foreground">{pendingJobForConfirmation?.vehicleDetails.licensePlate}</span>.
+            Do you want to send a welcome confirmation message to the customer via WhatsApp?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button variant="destructive" onClick={handleCancelAndDeleteJob}>
+             <Trash2 className="mr-2 h-4 w-4" />
+             Cancel & Delete Job
+          </Button>
+          <Button variant="default" onClick={handleConfirmAndSend}>
+            <Send className="mr-2 h-4 w-4" />
+            Confirm & Send
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
