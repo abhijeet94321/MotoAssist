@@ -43,9 +43,10 @@ export default function VehicleDataManagement() {
       const data: VehicleData = {};
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
+        const brandName = doc.id;
         // The 'name' field is used for ordering, so we exclude it from the data object
         delete docData.name; 
-        data[doc.id] = docData as Record<string, string[]>;
+        data[brandName] = docData as Record<string, string[]>;
       });
       setVehicleData(data);
     } catch (error) {
@@ -272,16 +273,14 @@ export default function VehicleDataManagement() {
                     <Card key={brand} className="overflow-hidden">
                     <AccordionItem value={brand} className="border-0">
                         <div className="flex items-center p-4 bg-muted/50">
-                            <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
+                        <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
                             <div className="flex items-center gap-2">
                                 <GripVertical className="h-5 w-5 text-muted-foreground"/>
                                 <span className="text-lg font-semibold">{brand}</span>
                             </div>
-                            </AccordionTrigger>
-                        <Button asChild variant="destructive" size="icon" className="h-8 w-8 ml-2">
-                           <button onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
+                        </AccordionTrigger>
+                        <Button variant="destructive" size="icon" className="h-8 w-8 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
                              <Trash2 className="h-4 w-4"/>
-                           </button>
                         </Button>
                         </div>
                         <AccordionContent className="p-4 space-y-4">
