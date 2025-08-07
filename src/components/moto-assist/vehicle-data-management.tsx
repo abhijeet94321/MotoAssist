@@ -103,7 +103,7 @@ export default function VehicleDataManagement() {
       toast({ title: "Brand exists", description: "This brand already exists.", variant: "destructive" });
       return;
     }
-    setVehicleData(prev => ({ ...prev, [brandKey]: {} }));
+    setVehicleData(prev => ({ ...prev, [brandKey]: { name: brandKey } as any }));
     setNewBrand("");
   };
 
@@ -200,7 +200,7 @@ export default function VehicleDataManagement() {
                 continue;
             }
 
-            if (!newData[brand]) newData[brand] = {};
+            if (!newData[brand]) newData[brand] = { name: brand } as any;
             if (!newData[brand][emissionType]) newData[brand][emissionType] = [];
             if (!newData[brand][emissionType].includes(model)) {
                 newData[brand][emissionType].push(model);
@@ -275,18 +275,20 @@ export default function VehicleDataManagement() {
                 {Object.keys(vehicleData).sort().map(brand => (
                     <Card key={brand} className="overflow-hidden">
                     <AccordionItem value={brand} className="border-0">
-                        <AccordionTrigger className="flex-1 p-4 bg-muted/50 text-left hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                                <span className="text-lg font-semibold">{brand}</span>
-                            </div>
-                        </AccordionTrigger>
-                        <Button variant="destructive" size="icon" className="absolute right-4 top-3 h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
-                             <Trash2 className="h-4 w-4"/>
-                        </Button>
+                        <div className="flex items-center p-4 pr-12 relative bg-muted/50">
+                            <AccordionTrigger className="flex-1 text-left hover:no-underline">
+                                <div className="flex items-center gap-2">
+                                    <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                    <span className="text-lg font-semibold">{brand}</span>
+                                </div>
+                            </AccordionTrigger>
+                            <Button variant="destructive" size="icon" className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
+                                <Trash2 className="h-4 w-4"/>
+                            </Button>
+                        </div>
                         <AccordionContent className="p-4 space-y-4">
                         
-                        {Object.keys(vehicleData[brand]).map(emissionType => (
+                        {Object.keys(vehicleData[brand]).filter(key => key !== 'name').map(emissionType => (
                             <div key={emissionType} className="p-4 border rounded-lg">
                                 <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-semibold text-md flex items-center gap-2"><Tag className="w-4 h-4 text-primary"/>{emissionType}</h4>
