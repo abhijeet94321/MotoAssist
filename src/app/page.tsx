@@ -234,21 +234,27 @@ export default function Home() {
   const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string, nextServiceDate?: string) => {
     const jobRef = doc(db, 'serviceJobs', jobId);
     const originalJob = serviceJobs.find(j => j.id === jobId);
+    if (!originalJob) {
+        toast({ title: "Job not found", variant: "destructive" });
+        return;
+    }
+
     const updateData: Partial<ServiceJob> = { status };
-    if (items) {
-      updateData.serviceItems = items;
-    }
-    if (mechanic !== undefined) {
-      updateData.mechanic = mechanic;
-    }
-    if (nextServiceDate) {
-        updateData.nextServiceDate = nextServiceDate;
-    }
+    if (items) updateData.serviceItems = items;
+    if (mechanic !== undefined) updateData.mechanic = mechanic;
+    if (nextServiceDate) updateData.nextServiceDate = nextServiceDate;
     
     try {
       await updateDoc(jobRef, updateData as any);
       
-      const updatedJob = { ...originalJob, ...updateData } as ServiceJob;
+      // THIS IS THE CRITICAL FIX: Create the new job object by merging the original with all updates.
+      const updatedJob: ServiceJob = {
+        ...originalJob,
+        status,
+        ...(items && { serviceItems: items }),
+        ...(mechanic !== undefined && { mechanic }),
+        ...(nextServiceDate && { nextServiceDate }),
+      };
 
       // Update the local state so the UI reflects the change immediately.
       setServiceJobs(prevJobs => prevJobs.map(job => 
@@ -256,7 +262,7 @@ export default function Home() {
       ));
 
       // Automatically trigger WhatsApp message on status change, except for 'Service Required'
-      if (originalJob && originalJob.status !== status && status !== 'Service Required') {
+      if (originalJob.status !== status && status !== 'Service Required') {
         const vehicleModelString = typeof updatedJob.vehicleDetails.vehicleModel === 'string' 
             ? updatedJob.vehicleDetails.vehicleModel 
             : `${updatedJob.vehicleDetails.vehicleModel.brand} ${updatedJob.vehicleDetails.vehicleModel.model}`;
@@ -282,7 +288,6 @@ export default function Home() {
             description: `Job status has been updated to ${status}.`,
         });
       }
-
 
       if (status === 'Billed') {
         // Find the full job object to pass to the billing view
