@@ -29,6 +29,8 @@ type JobDetailsViewProps = {
 
 export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
   const { vehicleDetails, serviceItems, payment, initialServiceRequest, mechanic } = job;
+  const vehicleModelString = typeof vehicleDetails.vehicleModel === 'string' ? vehicleDetails.vehicleModel : `${vehicleDetails.vehicleModel.brand} ${vehicleDetails.vehicleModel.model}`;
+
 
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
@@ -58,7 +60,7 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
           </div>
           <div>
             <h3 className="font-semibold mb-2">Vehicle</h3>
-            <p>{vehicleDetails.vehicleModel}</p>
+            <p>{vehicleModelString}</p>
             <p>{vehicleDetails.licensePlate}</p>
              {mechanic && (
               <div className="mt-2">

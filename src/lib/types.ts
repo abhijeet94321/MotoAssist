@@ -2,7 +2,12 @@ export type VehicleDetails = {
   userName: string;
   mobile: string;
   address: string;
-  vehicleModel: string;
+  vehicleModel: {
+    brand: string;
+    engineType: string;
+    model: string;
+    cc: string;
+  } | string; // Keep string for backward compatibility
   licensePlate: string;
 };
 

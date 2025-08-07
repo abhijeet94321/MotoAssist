@@ -120,7 +120,10 @@ export default function Home() {
     }
 
     const isRepeatCustomer = serviceJobs.some(
-      (job) => job.vehicleDetails.mobile === data.vehicleDetails.mobile
+      (job) => {
+        const mobile = typeof job.vehicleDetails.mobile === 'string' ? job.vehicleDetails.mobile : '';
+        return mobile === data.vehicleDetails.mobile;
+      }
     );
 
     const newJobData = {
@@ -141,7 +144,8 @@ export default function Home() {
 
       // Send WhatsApp Welcome Message
       const { userName, vehicleModel, licensePlate, mobile } = newJob.vehicleDetails;
-      const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModel}, ${licensePlate}) for service. We will keep you updated on the progress.`;
+      const vehicleModelString = typeof vehicleModel === 'string' ? vehicleModel : `${vehicleModel.brand} ${vehicleModel.model}`;
+      const message = `Thank you for choosing MotoAssist, ${userName}! We have received your vehicle (${vehicleModelString}, ${licensePlate}) for service. We will keep you updated on the progress.`;
       const encodedText = encodeURIComponent(message);
       const mobileNumber = mobile.replace(/\D/g, '');
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
@@ -181,7 +185,7 @@ export default function Home() {
     }
     
     try {
-      await updateDoc(jobRef, updateData);
+      await updateDoc(jobRef, updateData as any);
       if (status === 'Billed') {
         // Find the full job object to pass to the billing view
         const updatedJob = serviceJobs.find(j => j.id === jobId);
@@ -323,7 +327,7 @@ export default function Home() {
       case 'new_service':
         return (
           <ServiceIntakeForm
-            onSubmit={handleIntakeSubmit}
+            onSubmit={handleIntakeSubmit as any}
             onBack={handleBackToMain}
             existingJobs={serviceJobs}
           />

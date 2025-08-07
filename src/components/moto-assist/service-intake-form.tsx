@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Wrench
 } from "lucide-react";
+import { useState, useMemo } from 'react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,9 +33,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import type { ServiceJob } from "@/lib/types";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { vehicleData } from "@/lib/vehicle-data";
+
 
 const formSchema = z.object({
   vehicleDetails: z.object({
@@ -44,14 +54,19 @@ const formSchema = z.object({
         .min(10, "Please enter a valid mobile number.")
         .regex(/^[0-9+]+$/, "Please enter a valid mobile number."),
       address: z.string().min(5, "Address must be at least 5 characters."),
-      vehicleModel: z.string().min(2, "Vehicle model is required."),
+      vehicleModel: z.object({
+        brand: z.string({ required_error: "Please select a brand." }),
+        engineType: z.string({ required_error: "Please select an engine type." }),
+        model: z.string({ required_error: "Please select a model." }),
+        cc: z.string({ required_error: "Please select a CC." }),
+      }),
       licensePlate: z.string().min(4, "License plate is required."),
   }),
   initialServiceRequest: z.string().min(5, "Please describe the service required."),
 });
 
 type ServiceIntakeFormProps = {
-  onSubmit: (data: z.infer<typeof formSchema>) => void;
+  onSubmit: (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic' | 'userId' | 'vehicleDetails'> & { vehicleDetails: Omit<ServiceJob['vehicleDetails'], 'vehicleModel'> & { vehicleModel: string }}) => void;
   onBack: () => void;
   initialData?: z.infer<typeof formSchema> | null;
   existingJobs: ServiceJob[];
@@ -59,6 +74,10 @@ type ServiceIntakeFormProps = {
 
 export default function ServiceIntakeForm({ onSubmit, onBack, initialData, existingJobs }: ServiceIntakeFormProps) {
   const { toast } = useToast();
+  const [selectedBrand, setSelectedBrand] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.brand);
+  const [selectedEngineType, setSelectedEngineType] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.engineType);
+  const [selectedModel, setSelectedModel] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.model);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -66,12 +85,30 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
         userName: "",
         mobile: "",
         address: "",
-        vehicleModel: "",
+        vehicleModel: {
+            brand: undefined,
+            engineType: undefined,
+            model: undefined,
+            cc: undefined,
+        },
         licensePlate: "",
       },
       initialServiceRequest: "",
     },
   });
+
+  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
+    const { brand, engineType, model, cc } = data.vehicleDetails.vehicleModel;
+    const vehicleModelString = `${brand} - ${model} - ${cc}cc (${engineType})`;
+    const submissionData = {
+        ...data,
+        vehicleDetails: {
+            ...data.vehicleDetails,
+            vehicleModel: vehicleModelString
+        }
+    };
+    onSubmit(submissionData);
+  }
 
   const handleLicensePlateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const licensePlate = event.target.value.trim().toUpperCase();
@@ -87,14 +124,30 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
       form.setValue('vehicleDetails.userName', vehicleDetails.userName);
       form.setValue('vehicleDetails.mobile', vehicleDetails.mobile);
       form.setValue('vehicleDetails.address', vehicleDetails.address);
-      form.setValue('vehicleDetails.vehicleModel', vehicleDetails.vehicleModel);
 
+      // This part is trickier with the new vehicleModel object structure
+      // For now, we just fill user details
       toast({
         title: "Repeat Customer Found!",
         description: `Details for ${vehicleDetails.userName} have been auto-filled.`,
       });
     }
   };
+
+  const engineTypes = useMemo(() => {
+    if (!selectedBrand) return [];
+    return Object.keys(vehicleData[selectedBrand] || {});
+  }, [selectedBrand]);
+
+  const models = useMemo(() => {
+    if (!selectedBrand || !selectedEngineType) return [];
+    return Object.keys(vehicleData[selectedBrand]?.[selectedEngineType] || {});
+  }, [selectedBrand, selectedEngineType]);
+
+  const ccs = useMemo(() => {
+    if (!selectedBrand || !selectedEngineType || !selectedModel) return [];
+    return vehicleData[selectedBrand]?.[selectedEngineType]?.[selectedModel] || [];
+  }, [selectedBrand, selectedEngineType, selectedModel]);
 
 
   return (
@@ -106,7 +159,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardContent className="space-y-6 p-6">
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium text-lg">Vehicle & Service Details</h3>
@@ -134,16 +187,106 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
                 />
                  <FormField
                   control={form.control}
-                  name="vehicleDetails.vehicleModel"
+                  name="vehicleDetails.vehicleModel.brand"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vehicle Make & Model</FormLabel>
-                      <div className="relative">
-                         <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <FormControl>
-                          <Input placeholder="e.g. Honda Activa 6G" {...field} className="pl-10"/>
-                        </FormControl>
-                      </div>
+                      <FormLabel>Brand</FormLabel>
+                        <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedBrand(value);
+                            form.setValue('vehicleDetails.vehicleModel.engineType', undefined as any);
+                            form.setValue('vehicleDetails.vehicleModel.model', undefined as any);
+                            form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
+                            setSelectedEngineType(undefined);
+                            setSelectedModel(undefined);
+                        }} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select brand" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {Object.keys(vehicleData).map(brand => (
+                                    <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="vehicleDetails.vehicleModel.engineType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Engine Type</FormLabel>
+                        <Select onValueChange={(value) => {
+                             field.onChange(value);
+                             setSelectedEngineType(value)
+                             form.setValue('vehicleDetails.vehicleModel.model', undefined as any);
+                             form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
+                             setSelectedModel(undefined);
+                        }} value={field.value} disabled={!selectedBrand}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select engine type" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {engineTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="vehicleDetails.vehicleModel.model"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Model</FormLabel>
+                        <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedModel(value);
+                             form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
+                        }} value={field.value} disabled={!selectedEngineType}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select model" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                               {models.map(model => (
+                                    <SelectItem key={model} value={model}>{model}</SelectItem>
+                               ))}
+                            </SelectContent>
+                        </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="vehicleDetails.vehicleModel.cc"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CC</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedModel}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select CC" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                               {ccs.map(cc => (
+                                    <SelectItem key={cc} value={String(cc)}>{cc}cc</SelectItem>
+                               ))}
+                            </SelectContent>
+                        </Select>
                       <FormMessage />
                     </FormItem>
                   )}

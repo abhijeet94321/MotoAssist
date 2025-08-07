@@ -53,6 +53,13 @@ export default function Dashboard({ jobs }: DashboardProps) {
     };
   }, [jobs]);
 
+  const getVehicleModelString = (vehicleModel: ServiceJob['vehicleDetails']['vehicleModel']) => {
+    if (typeof vehicleModel === 'string') {
+        return vehicleModel;
+    }
+    return `${vehicleModel.brand} ${vehicleModel.model}`;
+  }
+
   return (
     <div className="grid gap-6">
        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -135,7 +142,7 @@ export default function Dashboard({ jobs }: DashboardProps) {
                                <div className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</div>
                              </TableCell>
                              <TableCell>
-                               <div className="font-medium">{job.vehicleDetails.vehicleModel}</div>
+                               <div className="font-medium">{getVehicleModelString(job.vehicleDetails.vehicleModel)}</div>
                                <div className="text-sm text-muted-foreground">{job.vehicleDetails.licensePlate}</div>
                              </TableCell>
                              <TableCell className="text-right font-medium">

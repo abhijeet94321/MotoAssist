@@ -84,6 +84,8 @@ export default function BillPreview({
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const { vehicleDetails, serviceItems } = job;
+  const vehicleModelString = typeof vehicleDetails.vehicleModel === 'string' ? vehicleDetails.vehicleModel : `${vehicleDetails.vehicleModel.brand} ${vehicleDetails.vehicleModel.model}`;
+
 
   const totalCost = serviceItems.reduce(
     (acc, item) => acc + item.partsCost + item.laborCost,
@@ -97,7 +99,7 @@ export default function BillPreview({
     text += `Name: ${vehicleDetails.userName}\n`;
     text += `Mobile: ${vehicleDetails.mobile}\n\n`;
     text += `*Vehicle Details*\n`;
-    text += `Model: ${vehicleDetails.vehicleModel}\n`;
+    text += `Model: ${vehicleModelString}\n`;
     text += `License: ${vehicleDetails.licensePlate}\n\n`;
     text += `*Service Details*\n`;
     text += `--------------------\n`;
@@ -170,7 +172,7 @@ export default function BillPreview({
           </div>
           <div>
             <h3 className="font-semibold mb-2">Vehicle</h3>
-            <p>{vehicleDetails.vehicleModel}</p>
+            <p>{vehicleModelString}</p>
             <p>{vehicleDetails.licensePlate}</p>
           </div>
         </div>

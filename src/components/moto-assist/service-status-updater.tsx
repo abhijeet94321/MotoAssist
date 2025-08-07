@@ -59,6 +59,8 @@ export default function ServiceStatusUpdater({
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
     const [assignedMechanic, setAssignedMechanic] = useState<string>(job.mechanic);
+    const vehicleModelString = typeof job.vehicleDetails.vehicleModel === 'string' ? job.vehicleDetails.vehicleModel : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
+
 
     const handleUpdate = () => {
         if (currentStatus === 'In Progress' && !assignedMechanic) {
@@ -84,7 +86,7 @@ export default function ServiceStatusUpdater({
         }
 
         message = message.replace('{userName}', job.vehicleDetails.userName)
-                         .replace('{vehicleModel}', job.vehicleDetails.vehicleModel);
+                         .replace('{vehicleModel}', vehicleModelString);
         
         const encodedText = encodeURIComponent(message);
         const mobileNumber = job.vehicleDetails.mobile.replace(/\D/g, '');
@@ -134,7 +136,7 @@ export default function ServiceStatusUpdater({
             <div className="flex items-start gap-3">
                 <Bike className="w-5 h-5 mt-0.5 text-primary"/> 
                 <div>
-                    <p className="font-semibold">{job.vehicleDetails.vehicleModel}</p>
+                    <p className="font-semibold">{vehicleModelString}</p>
                     <p className="text-muted-foreground">{job.vehicleDetails.licensePlate}</p>
                 </div>
             </div>
@@ -197,7 +199,7 @@ export default function ServiceStatusUpdater({
         
         {currentStatus === 'In Progress' && (
             <ServiceLogger
-                vehicleModel={job.vehicleDetails.vehicleModel}
+                vehicleModel={vehicleModelString}
                 initialServices={serviceItems}
                 onItemsUpdate={setServiceItems}
             />
