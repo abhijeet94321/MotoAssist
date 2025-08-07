@@ -154,8 +154,8 @@ export default function Dashboard({ jobs }: DashboardProps) {
                 <CardTitle>Customer Overview</CardTitle>
                 <CardDescription>A breakdown of new vs. returning customers.</CardDescription>
             </CardHeader>
-            <CardContent>
-               <ResponsiveContainer width="100%" height={250}>
+            <CardContent className="h-[250px]">
+               <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={stats.customerData}

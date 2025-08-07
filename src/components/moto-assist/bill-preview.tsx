@@ -177,8 +177,8 @@ export default function BillPreview({
 
         <Separator />
 
-        <div>
-           <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+           <div className="border rounded-lg overflow-hidden min-w-[600px]">
              <Table>
                 <TableHeader>
                     <TableRow>
@@ -206,8 +206,8 @@ export default function BillPreview({
 
         <Separator />
 
-        <div className="flex justify-between items-center">
-          <div className="w-1/3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="w-full sm:w-1/3">
             <h3 className="font-semibold mb-2">Payment Status</h3>
             <Select onValueChange={(v) => setPaymentStatus(v as PaymentStatus)} defaultValue={paymentStatus}>
                 <SelectTrigger>
@@ -220,7 +220,7 @@ export default function BillPreview({
                 </SelectContent>
             </Select>
           </div>
-          <div className="text-right">
+          <div className="text-right w-full sm:w-auto">
             <p className="text-muted-foreground">Total Amount</p>
             <p className="text-3xl font-bold text-primary">₹{totalCost.toFixed(2)}</p>
           </div>
@@ -230,20 +230,20 @@ export default function BillPreview({
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-center w-full sm:w-auto">
             {paymentStatus === 'Pending' ? (
-                 <Button onClick={onPendingBill} variant="secondary">
+                 <Button onClick={onPendingBill} variant="secondary" className="w-full">
                     Bill Pending
                  </Button>
             ) : (
-                <Button onClick={handleConfirmPayment}>
+                <Button onClick={handleConfirmPayment} className="w-full">
                     {paymentStatus === 'Paid - Cash' && <Wallet className="mr-2 h-4 w-4" />}
                     {paymentStatus === 'Paid - Online' && <CreditCard className="mr-2 h-4 w-4" />}
                     Confirm Payment
                 </Button>
             )}
 
-            <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white">
+            <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white w-full">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Share Bill
             </Button>
         </div>

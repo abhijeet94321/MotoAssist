@@ -429,20 +429,22 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
              {user && (
-                 <div className="flex items-center gap-3">
-                     <Avatar className="h-9 w-9">
-                         <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
-                     </Avatar>
-                     <div className="text-sm text-right">
-                         <div className="flex items-center gap-2">
-                             <p className="font-medium text-foreground">{user.email}</p>
-                             {isAdmin && <Badge>Admin</Badge>}
+                 <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-accent/50">
+                     <div className="flex items-center gap-2">
+                         <Avatar className="h-9 w-9">
+                             <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                         </Avatar>
+                         <div className="text-sm">
+                             <div className="flex items-center gap-2">
+                                 <p className="font-medium text-foreground truncate">{user.email}</p>
+                                 {isAdmin && <Badge>Admin</Badge>}
+                             </div>
+                             <Button variant="link" className="p-0 h-auto text-xs" onClick={signOut}>
+                                Sign Out <LogOut className="ml-2 h-3 w-3" />
+                             </Button>
                          </div>
-                         <Button variant="link" className="p-0 h-auto text-xs" onClick={signOut}>
-                            Sign Out <LogOut className="ml-2 h-3 w-3" />
-                         </Button>
                      </div>
                  </div>
              )}

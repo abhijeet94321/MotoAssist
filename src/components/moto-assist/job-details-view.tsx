@@ -85,8 +85,8 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
 
         <div>
            <h3 className="font-semibold mb-2">Services Performed & Parts Used</h3>
-           <div className="border rounded-lg overflow-hidden">
-             <Table>
+           <div className="border rounded-lg overflow-x-auto">
+             <Table className="min-w-[600px]">
                 <TableHeader>
                     <TableRow>
                     <TableHead className="w-1/2">Description</TableHead>
@@ -113,7 +113,7 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
 
         <Separator />
 
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold">Payment Status:</h3>
             <Badge variant="default" className="bg-emerald-600 text-white">
@@ -121,7 +121,7 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
                 {payment.status}
             </Badge>
           </div>
-          <div className="text-right">
+          <div className="text-right w-full sm:w-auto">
             <p className="text-muted-foreground">Total Amount Paid</p>
             <p className="text-3xl font-bold text-primary">₹{totalCost.toFixed(2)}</p>
           </div>

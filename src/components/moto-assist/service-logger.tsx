@@ -82,7 +82,7 @@ export default function ServiceLogger({
       <AiSuggestions vehicleModel={vehicleModel} onSuggestionSelect={handleSuggestionSelect} />
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-4 border rounded-lg">
-        <div className="md:col-span-5">
+        <div className="md:col-span-12 lg:col-span-5">
           <Label htmlFor="description">Service/Part Description</Label>
           <Textarea
             id="description"
@@ -91,7 +91,7 @@ export default function ServiceLogger({
             placeholder="e.g. Engine oil change, air filter replacement"
           />
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-6 lg:col-span-2">
           <Label htmlFor="partsCost">Parts Cost (₹)</Label>
           <Input
             id="partsCost"
@@ -101,7 +101,7 @@ export default function ServiceLogger({
             placeholder="e.g. 500"
           />
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-6 lg:col-span-2">
           <Label htmlFor="laborCost">Labor Cost (₹)</Label>
           <Input
             id="laborCost"
@@ -111,7 +111,7 @@ export default function ServiceLogger({
             placeholder="e.g. 200"
           />
         </div>
-        <div className="md:col-span-3">
+        <div className="md:col-span-12 lg:col-span-3">
           <Button onClick={handleAddItem} className="w-full">
             <PlusCircle className="mr-2 h-4 w-4" /> Add Item
           </Button>
@@ -120,8 +120,8 @@ export default function ServiceLogger({
       
       <div>
         <h3 className="text-lg font-medium mb-2">Service Items</h3>
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
+        <div className="border rounded-lg overflow-x-auto">
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Description</TableHead>
