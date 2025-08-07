@@ -25,6 +25,7 @@ import {
   User,
   MessageSquare,
   UserCheck,
+  BellRing,
 } from "lucide-react";
 import ServiceLogger from "./service-logger";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,7 @@ import { Separator } from "../ui/separator";
 type ServiceStatusUpdaterProps = {
   job: ServiceJob;
   mechanics: Mechanic[];
-  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string) => void;
+  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string, nextServiceDate?: string) => void;
   onBack: () => void;
 };
 
@@ -59,6 +60,7 @@ export default function ServiceStatusUpdater({
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
     const [assignedMechanic, setAssignedMechanic] = useState<string>(job.mechanic);
+    const [reminderMonths, setReminderMonths] = useState<string>("0");
     const vehicleModelString = typeof job.vehicleDetails.vehicleModel === 'string' 
       ? job.vehicleDetails.vehicleModel 
       : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
@@ -72,7 +74,15 @@ export default function ServiceStatusUpdater({
             });
             return;
         }
-        onUpdate(job.id, currentStatus, serviceItems, assignedMechanic);
+
+        let nextServiceDate: string | undefined = undefined;
+        if (currentStatus === 'Completed' && parseInt(reminderMonths) > 0) {
+            const date = new Date();
+            date.setMonth(date.getMonth() + parseInt(reminderMonths));
+            nextServiceDate = date.toISOString();
+        }
+
+        onUpdate(job.id, currentStatus, serviceItems, assignedMechanic, nextServiceDate);
     }
 
     const handleShareUpdate = () => {
@@ -112,8 +122,15 @@ export default function ServiceStatusUpdater({
                 });
                 return;
             }
-            // The onUpdate function in the parent will now handle the whatsapp message
-            onUpdate(job.id, nextStatus, serviceItems, assignedMechanic);
+
+            let nextServiceDate: string | undefined = undefined;
+            if (nextStatus === 'Completed' && parseInt(reminderMonths) > 0) {
+                const date = new Date();
+                date.setMonth(date.getMonth() + parseInt(reminderMonths));
+                nextServiceDate = date.toISOString();
+            }
+
+            onUpdate(job.id, nextStatus, serviceItems, assignedMechanic, nextServiceDate);
         }
     }
 
@@ -205,6 +222,29 @@ export default function ServiceStatusUpdater({
                 initialServices={serviceItems}
                 onItemsUpdate={setServiceItems}
             />
+        )}
+
+        {currentStatus === 'Completed' && (
+             <div className="space-y-2">
+                <h3 className="font-semibold">Next Service Reminder</h3>
+                <Select onValueChange={setReminderMonths} value={reminderMonths}>
+                    <SelectTrigger>
+                         <div className="flex items-center gap-2">
+                            <BellRing className="h-4 w-4 text-muted-foreground"/>
+                            <SelectValue placeholder="Set a reminder" />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="0">No Reminder</SelectItem>
+                        <SelectItem value="1">1 Month</SelectItem>
+                        <SelectItem value="2">2 Months</SelectItem>
+                        <SelectItem value="3">3 Months</SelectItem>
+                        <SelectItem value="4">4 Months</SelectItem>
+                        <SelectItem value="5">5 Months</SelectItem>
+                        <SelectItem value="6">6 Months</SelectItem>
+                    </SelectContent>
+                </Select>
+             </div>
         )}
 
       </CardContent>

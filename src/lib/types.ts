@@ -39,6 +39,7 @@ export type ServiceJob = {
     isRepeat: boolean;
     intakeDate: string; // ISO string
     mechanic: string;
+    nextServiceDate?: string; // ISO string for the reminder
 };
 
 export type Mechanic = {

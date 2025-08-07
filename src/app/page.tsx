@@ -231,7 +231,7 @@ export default function Home() {
     setView('update_status');
   };
 
-  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string) => {
+  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string, nextServiceDate?: string) => {
     const jobRef = doc(db, 'serviceJobs', jobId);
     const originalJob = serviceJobs.find(j => j.id === jobId);
     const updateData: Partial<ServiceJob> = { status };
@@ -240,6 +240,9 @@ export default function Home() {
     }
     if (mechanic !== undefined) {
       updateData.mechanic = mechanic;
+    }
+     if (nextServiceDate) {
+        updateData.nextServiceDate = nextServiceDate;
     }
     
     try {
@@ -411,7 +414,7 @@ export default function Home() {
           return (
             <ServiceStatusUpdater
               job={activeJob}
-              onUpdate={handleStatusUpdate}
+              onUpdate={handleStatusUpdate as any}
               onBack={handleBackToMain}
               mechanics={mechanics}
             />
