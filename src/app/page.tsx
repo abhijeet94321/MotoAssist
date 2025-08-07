@@ -241,13 +241,19 @@ export default function Home() {
     if (mechanic !== undefined) {
       updateData.mechanic = mechanic;
     }
-     if (nextServiceDate) {
+    if (nextServiceDate) {
         updateData.nextServiceDate = nextServiceDate;
     }
     
     try {
       await updateDoc(jobRef, updateData as any);
+      
       const updatedJob = { ...originalJob, ...updateData } as ServiceJob;
+
+      // Update the local state so the UI reflects the change immediately.
+      setServiceJobs(prevJobs => prevJobs.map(job => 
+        job.id === jobId ? updatedJob : job
+      ));
 
       // Automatically trigger WhatsApp message on status change, except for 'Service Required'
       if (originalJob && originalJob.status !== status && status !== 'Service Required') {
@@ -414,7 +420,7 @@ export default function Home() {
           return (
             <ServiceStatusUpdater
               job={activeJob}
-              onUpdate={handleStatusUpdate as any}
+              onUpdate={handleStatusUpdate}
               onBack={handleBackToMain}
               mechanics={mechanics}
             />
