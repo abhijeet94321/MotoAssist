@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from '@/components/auth-provider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
