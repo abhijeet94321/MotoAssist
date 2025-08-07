@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
@@ -17,7 +16,7 @@ import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
 import MechanicSettings from '@/components/moto-assist/mechanic-settings';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,6 +34,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
 
+// This is the designated Admin User ID. Only this user can see all data.
+const ADMIN_UID = 'Pub9DGemRlNCdV39mXXTCI8N0YN2';
+
 export default function Home() {
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
@@ -43,15 +45,27 @@ export default function Home() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading, signOut } = useAuth();
+
+  const isAdmin = useMemo(() => user?.uid === ADMIN_UID, [user]);
   
   useEffect(() => {
     if (!user) return; // Wait for the user to be authenticated
 
     setLoading(true);
     
-    // Now that rules are open, queries are simpler.
-    const jobsQuery = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
-    const mechanicsQuery = query(collection(db, "mechanics"), orderBy("name"));
+    // Define base queries
+    let jobsQuery;
+    let mechanicsQuery;
+
+    if (isAdmin) {
+        // Admin sees all data
+        jobsQuery = query(collection(db, "serviceJobs"), orderBy("intakeDate", "desc"));
+        mechanicsQuery = query(collection(db, "mechanics"), orderBy("name"));
+    } else {
+        // Regular users see only their own data
+        jobsQuery = query(collection(db, "serviceJobs"), where("userId", "==", user.uid), orderBy("intakeDate", "desc"));
+        mechanicsQuery = query(collection(db, "mechanics"), where("userId", "==", user.uid), orderBy("name"));
+    }
 
     const unsubscribeJobs = onSnapshot(jobsQuery, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
@@ -90,7 +104,7 @@ export default function Home() {
       unsubscribeJobs();
       unsubscribeMechanics();
     };
-  }, [toast, user]);
+  }, [toast, user, isAdmin]);
 
 
   const handleNewServiceClick = () => {
@@ -421,7 +435,10 @@ export default function Home() {
                          <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
                      </Avatar>
                      <div className="text-sm text-right">
-                         <p className="font-medium text-foreground">{user.email}</p>
+                         <div className="flex items-center gap-2">
+                             <p className="font-medium text-foreground">{user.email}</p>
+                             {isAdmin && <Badge>Admin</Badge>}
+                         </div>
                          <Button variant="link" className="p-0 h-auto text-xs" onClick={signOut}>
                             Sign Out <LogOut className="ml-2 h-3 w-3" />
                          </Button>
