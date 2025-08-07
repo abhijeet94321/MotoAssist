@@ -71,7 +71,12 @@ export default function VehicleDataManagement() {
     try {
         Object.keys(vehicleData).forEach(brand => {
             const brandRef = doc(db, 'vehicleData', brand);
+            // The document now contains the emission types and models directly.
+            // The 'name' field is added for ordering purposes when querying.
             const dataToSave = { name: brand, ...vehicleData[brand] };
+            // Since vehicleData[brand] might contain the 'name' key from fetching, we remove it before saving.
+            delete dataToSave[brand as keyof typeof dataToSave]?.name;
+
             batch.set(brandRef, dataToSave, { merge: true });
         });
 
@@ -103,7 +108,8 @@ export default function VehicleDataManagement() {
       toast({ title: "Brand exists", description: "This brand already exists.", variant: "destructive" });
       return;
     }
-    setVehicleData(prev => ({ ...prev, [brandKey]: { name: brandKey } as any }));
+    // No need to add 'name' field here, it's handled on save.
+    setVehicleData(prev => ({ ...prev, [brandKey]: {} }));
     setNewBrand("");
   };
 
@@ -199,8 +205,9 @@ export default function VehicleDataManagement() {
                 console.warn("Skipping invalid item:", item);
                 continue;
             }
-
-            if (!newData[brand]) newData[brand] = { name: brand } as any;
+            
+            // No need to add 'name' field here
+            if (!newData[brand]) newData[brand] = {};
             if (!newData[brand][emissionType]) newData[brand][emissionType] = [];
             if (!newData[brand][emissionType].includes(model)) {
                 newData[brand][emissionType].push(model);
@@ -297,7 +304,7 @@ export default function VehicleDataManagement() {
                                 </Button>
                                 </div>
                                 <ul className="space-y-1 pl-6 list-disc list-outside">
-                                {vehicleData[brand][emissionType].map(model => (
+                                {vehicleData[brand][emissionType] && Array.isArray(vehicleData[brand][emissionType]) && vehicleData[brand][emissionType].map(model => (
                                     <li key={model} className="flex items-center justify-between">
                                     <span>{model}</span>
                                     <Button variant="ghost" size="icon" className="text-destructive h-6 w-6" onClick={() => handleDeleteModel(brand, emissionType, model)}>
