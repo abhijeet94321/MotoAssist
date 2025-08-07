@@ -20,7 +20,8 @@ type VehicleData = Record<string, Record<string, string[]>>;
 
 type UploadedItem = {
     Brand: string;
-    "Emission Type": string;
+    "Emission Type"?: string;
+    EngineType?: string; // Accept legacy key
     Model: string;
 };
 
@@ -44,8 +45,7 @@ export default function VehicleDataManagement() {
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
         const brandName = doc.id;
-        // The 'name' field is used for ordering, so we exclude it from the data object
-        delete docData.name; 
+        // The 'name' field is used for ordering, but we need the brand name as the key
         data[brandName] = docData as Record<string, string[]>;
       });
       setVehicleData(data);
@@ -191,7 +191,10 @@ export default function VehicleDataManagement() {
         const newData = { ...vehicleData };
 
         for (const item of data) {
-            const { Brand: brand, "Emission Type": emissionType, Model: model } = item;
+            const brand = item.Brand;
+            const emissionType = item["Emission Type"] || item.EngineType; // Accept both keys
+            const model = item.Model;
+
             if (!brand || !emissionType || !model) {
                 console.warn("Skipping invalid item:", item);
                 continue;
@@ -239,7 +242,7 @@ export default function VehicleDataManagement() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5"/>Bulk Upload from JSON</CardTitle>
                 <CardDescription>
-                    Convert your Excel file to JSON and paste it here. The JSON must be an array of objects with keys "Brand", "Emission Type", and "Model".
+                    Convert your Excel file to JSON and paste it here. The JSON must be an array of objects with keys "Brand", "Emission Type" (or "EngineType"), and "Model".
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -272,17 +275,15 @@ export default function VehicleDataManagement() {
                 {Object.keys(vehicleData).sort().map(brand => (
                     <Card key={brand} className="overflow-hidden">
                     <AccordionItem value={brand} className="border-0">
-                        <div className="flex items-center p-4 bg-muted/50">
-                        <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
+                        <AccordionTrigger className="flex-1 p-4 bg-muted/50 text-left hover:no-underline">
                             <div className="flex items-center gap-2">
                                 <GripVertical className="h-5 w-5 text-muted-foreground"/>
                                 <span className="text-lg font-semibold">{brand}</span>
                             </div>
                         </AccordionTrigger>
-                        <Button variant="destructive" size="icon" className="h-8 w-8 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
+                        <Button variant="destructive" size="icon" className="absolute right-4 top-3 h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteBrand(brand); }}>
                              <Trash2 className="h-4 w-4"/>
                         </Button>
-                        </div>
                         <AccordionContent className="p-4 space-y-4">
                         
                         {Object.keys(vehicleData[brand]).map(emissionType => (
