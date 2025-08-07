@@ -112,6 +112,7 @@ export default function ServiceStatusUpdater({
                 });
                 return;
             }
+            // The onUpdate function in the parent will now handle the whatsapp message
             onUpdate(job.id, nextStatus, serviceItems, assignedMechanic);
         }
     }

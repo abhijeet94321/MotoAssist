@@ -39,6 +39,14 @@ type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details
 // This is the designated Admin User ID. Only this user can see all data.
 const ADMIN_UID = 'Pub9DGemRlNCdV39mXXTCI8N0YN2';
 
+// A simple map of status to message templates
+const statusUpdateTextMap: Partial<Record<ServiceJob['status'], string>> = {
+    'In Progress': 'Hi {userName}, work has started on your vehicle ({vehicleModel}). We will keep you updated.',
+    'Completed': 'Hi {userName}, the service on your vehicle ({vehicleModel}) is complete. We will share the bill with you shortly for payment.',
+    'Billed': 'Hi {userName}, your bill for the service on your vehicle ({vehicleModel}) is ready. Please proceed with the payment.',
+};
+
+
 export default function Home() {
   const [view, setView] = useState<View>('main');
   const [serviceJobs, setServiceJobs] = useState<ServiceJob[]>([]);
@@ -225,6 +233,7 @@ export default function Home() {
 
   const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string) => {
     const jobRef = doc(db, 'serviceJobs', jobId);
+    const originalJob = serviceJobs.find(j => j.id === jobId);
     const updateData: Partial<ServiceJob> = { status };
     if (items) {
       updateData.serviceItems = items;
@@ -235,20 +244,45 @@ export default function Home() {
     
     try {
       await updateDoc(jobRef, updateData as any);
+      const updatedJob = { ...originalJob, ...updateData } as ServiceJob;
+
+      // Automatically trigger WhatsApp message on status change, except for 'Service Required'
+      if (originalJob && originalJob.status !== status && status !== 'Service Required') {
+        const vehicleModelString = typeof updatedJob.vehicleDetails.vehicleModel === 'string' 
+            ? updatedJob.vehicleDetails.vehicleModel 
+            : `${updatedJob.vehicleDetails.vehicleModel.brand} ${updatedJob.vehicleDetails.vehicleModel.model}`;
+
+        const messageTemplate = statusUpdateTextMap[status];
+
+        if (messageTemplate) {
+            const message = messageTemplate.replace('{userName}', updatedJob.vehicleDetails.userName)
+                                          .replace('{vehicleModel}', vehicleModelString);
+            const encodedText = encodeURIComponent(message);
+            const mobileNumber = updatedJob.vehicleDetails.mobile.replace(/\D/g, '');
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${encodedText}`;
+            
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            toast({
+              title: "Status Update Ready to Send",
+              description: `A WhatsApp message for status "${status}" has been prepared.`,
+            });
+        }
+      } else {
+         toast({
+            title: "Changes Saved",
+            description: `Job status has been updated to ${status}.`,
+        });
+      }
+
+
       if (status === 'Billed') {
         // Find the full job object to pass to the billing view
-        const updatedJob = serviceJobs.find(j => j.id === jobId);
-        if (updatedJob) {
-           setActiveJob({ ...updatedJob, ...updateData });
-           setView('billing');
-        }
+        setActiveJob(updatedJob);
+        setView('billing');
       } else {
         setView('main');
       }
-      toast({
-        title: "Status Updated",
-        description: `Job status has been updated to ${status}.`,
-      });
+
     } catch (error) {
        console.error("Error updating document: ", error);
        toast({
