@@ -153,7 +153,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
     }
   };
 
-  const emissionTypes = Object.keys(vehicleData[selectedBrand] || {});
+  const emissionTypes = Object.keys(vehicleData[selectedBrand] || {}).filter(key => key !== 'name');
   const models = vehicleData[selectedBrand]?.[selectedEmissionType] || [];
 
   if (loading) {
