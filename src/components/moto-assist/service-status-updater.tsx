@@ -59,8 +59,9 @@ export default function ServiceStatusUpdater({
     const [currentStatus, setCurrentStatus] = useState<ServiceStatus>(job.status);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>(job.serviceItems);
     const [assignedMechanic, setAssignedMechanic] = useState<string>(job.mechanic);
-    const vehicleModelString = typeof job.vehicleDetails.vehicleModel === 'string' ? job.vehicleDetails.vehicleModel : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
-
+    const vehicleModelString = typeof job.vehicleDetails.vehicleModel === 'string' 
+      ? job.vehicleDetails.vehicleModel 
+      : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
 
     const handleUpdate = () => {
         if (currentStatus === 'In Progress' && !assignedMechanic) {

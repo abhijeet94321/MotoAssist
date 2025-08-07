@@ -43,6 +43,13 @@ export default function ServiceJobsList({
   jobs,
   onUpdateStatusClick,
 }: ServiceJobsListProps) {
+  const getVehicleModelString = (vehicleModel: ServiceJob['vehicleDetails']['vehicleModel']) => {
+    if (typeof vehicleModel === 'string') {
+        return vehicleModel;
+    }
+    return `${vehicleModel.brand} ${vehicleModel.model}`;
+  }
+  
   return (
     <Card>
       <CardHeader>
@@ -62,7 +69,7 @@ export default function ServiceJobsList({
             jobs.map((job) => (
               <Card key={job.id} className="w-full">
                 <CardHeader>
-                   <CardTitle>{typeof job.vehicleDetails.vehicleModel === 'string' ? job.vehicleDetails.vehicleModel : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`}</CardTitle>
+                   <CardTitle>{getVehicleModelString(job.vehicleDetails.vehicleModel)}</CardTitle>
                    <CardDescription>{job.vehicleDetails.licensePlate}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -131,7 +138,7 @@ export default function ServiceJobsList({
                         <div className="text-sm text-muted-foreground">{job.vehicleDetails.mobile}</div>
                     </TableCell>
                     <TableCell>
-                        <div className="font-medium">{typeof job.vehicleDetails.vehicleModel === 'string' ? job.vehicleDetails.vehicleModel : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`}</div>
+                        <div className="font-medium">{getVehicleModelString(job.vehicleDetails.vehicleModel)}</div>
                         <div className="text-sm text-muted-foreground">{job.vehicleDetails.licensePlate}</div>
                     </TableCell>
                     <TableCell>

@@ -5,7 +5,7 @@ import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, Database } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -31,6 +31,7 @@ import {
 import { useAuth } from '@/components/auth-provider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import VehicleDataManagement from '@/components/moto-assist/vehicle-data-management';
 
 
 type View = 'main' | 'new_service' | 'update_status' | 'billing' | 'view_details';
@@ -373,6 +374,7 @@ export default function Home() {
               <TabsTrigger value="payments"><IndianRupee className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Payments</span></TabsTrigger>
               <TabsTrigger value="history"><History className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">History</span></TabsTrigger>
               <TabsTrigger value="settings"><Settings className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Settings</span></TabsTrigger>
+              {isAdmin && <TabsTrigger value="vehicleData"><Database className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Vehicle Data</span></TabsTrigger>}
             </TabsList>
             <TabsContent value="dashboard">
               <Dashboard jobs={serviceJobs} />
@@ -403,6 +405,11 @@ export default function Home() {
                   onDeleteMechanic={handleDeleteMechanic}
                 />
             </TabsContent>
+             {isAdmin && (
+                <TabsContent value="vehicleData">
+                    <VehicleDataManagement />
+                </TabsContent>
+            )}
           </Tabs>
         );
     }

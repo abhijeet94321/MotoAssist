@@ -3,14 +3,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow any authenticated user to read and write to the serviceJobs collection.
-    match /serviceJobs/{jobId} {
-      allow read, write: if request.auth != null;
+    // Admin user ID
+    function isAdmin(userId) {
+      return userId == 'Pub9DGemRlNCdV39mXXTCI8N0YN2';
     }
 
-    // Allow any authenticated user to read and write to the mechanics collection.
+    match /serviceJobs/{jobId} {
+      // Admin can do anything
+      // Regular users can only CUD their own jobs
+      allow read, write: if request.auth != null && (isAdmin(request.auth.uid) || request.auth.uid == resource.data.userId);
+    }
+
     match /mechanics/{mechanicId} {
-      allow read, write: if request.auth != null;
+        // Admin can do anything
+        // Regular users can only CUD their own mechanics
+      allow read, write: if request.auth != null && (isAdmin(request.auth.uid) || request.auth.uid == resource.data.userId);
+    }
+    
+    match /vehicleData/{brandId} {
+        // Logged-in users can read the data for the dropdowns
+        allow read: if request.auth != null;
+        // Only admins can write/update the vehicle data
+        allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
   }
 }

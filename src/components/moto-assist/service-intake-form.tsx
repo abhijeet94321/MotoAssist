@@ -11,9 +11,10 @@ import {
   Hash,
   ArrowRight,
   ArrowLeft,
-  Wrench
+  Wrench,
+  LoaderCircle,
 } from "lucide-react";
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,8 +44,8 @@ import {
 import type { ServiceJob } from "@/lib/types";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { vehicleData } from "@/lib/vehicle-data";
-
+import { db } from "@/lib/firebase";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 
 const formSchema = z.object({
   vehicleDetails: z.object({
@@ -56,9 +57,8 @@ const formSchema = z.object({
       address: z.string().min(5, "Address must be at least 5 characters."),
       vehicleModel: z.object({
         brand: z.string({ required_error: "Please select a brand." }),
-        engineType: z.string({ required_error: "Please select an engine type." }),
+        emissionType: z.string({ required_error: "Please select an emission type." }),
         model: z.string({ required_error: "Please select a model." }),
-        cc: z.string({ required_error: "Please select a CC." }),
       }),
       licensePlate: z.string().min(4, "License plate is required."),
   }),
@@ -66,18 +66,19 @@ const formSchema = z.object({
 });
 
 type ServiceIntakeFormProps = {
-  onSubmit: (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic' | 'userId' | 'vehicleDetails'> & { vehicleDetails: Omit<ServiceJob['vehicleDetails'], 'vehicleModel'> & { vehicleModel: string }}) => void;
+  onSubmit: (data: Omit<ServiceJob, 'id' | 'status' | 'serviceItems' | 'payment' | 'isRepeat' | 'intakeDate' | 'mechanic' | 'userId'>) => void;
   onBack: () => void;
   initialData?: z.infer<typeof formSchema> | null;
   existingJobs: ServiceJob[];
 };
 
+type VehicleData = Record<string, Record<string, string[]>>;
+
 export default function ServiceIntakeForm({ onSubmit, onBack, initialData, existingJobs }: ServiceIntakeFormProps) {
   const { toast } = useToast();
-  const [selectedBrand, setSelectedBrand] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.brand);
-  const [selectedEngineType, setSelectedEngineType] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.engineType);
-  const [selectedModel, setSelectedModel] = useState<string | undefined>(initialData?.vehicleDetails.vehicleModel.model);
-  
+  const [vehicleData, setVehicleData] = useState<VehicleData>({});
+  const [loading, setLoading] = useState(true);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -87,9 +88,8 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
         address: "",
         vehicleModel: {
             brand: undefined,
-            engineType: undefined,
+            emissionType: undefined,
             model: undefined,
-            cc: undefined,
         },
         licensePlate: "",
       },
@@ -97,18 +97,35 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
     },
   });
 
-  const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
-    const { brand, engineType, model, cc } = data.vehicleDetails.vehicleModel;
-    const vehicleModelString = `${brand} - ${model} - ${cc}cc (${engineType})`;
-    const submissionData = {
-        ...data,
-        vehicleDetails: {
-            ...data.vehicleDetails,
-            vehicleModel: vehicleModelString
-        }
-    };
-    onSubmit(submissionData);
-  }
+  const selectedBrand = form.watch('vehicleDetails.vehicleModel.brand');
+  const selectedEmissionType = form.watch('vehicleDetails.vehicleModel.emissionType');
+
+  const fetchVehicleData = useCallback(async () => {
+    setLoading(true);
+    try {
+        const q = query(collection(db, "vehicleData"), orderBy("name"));
+        const querySnapshot = await getDocs(q);
+        const data: VehicleData = {};
+        querySnapshot.forEach((doc) => {
+            data[doc.id] = doc.data() as Record<string, string[]>;
+        });
+        setVehicleData(data);
+    } catch (error) {
+        console.error("Error fetching vehicle data: ", error);
+        toast({
+            title: "Error fetching vehicle data",
+            description: "Could not load vehicle brands. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchVehicleData();
+  }, [fetchVehicleData]);
+
 
   const handleLicensePlateBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const licensePlate = event.target.value.trim().toUpperCase();
@@ -125,8 +142,10 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
       form.setValue('vehicleDetails.mobile', vehicleDetails.mobile);
       form.setValue('vehicleDetails.address', vehicleDetails.address);
 
-      // This part is trickier with the new vehicleModel object structure
-      // For now, we just fill user details
+      if (typeof vehicleDetails.vehicleModel !== 'string') {
+        form.setValue('vehicleDetails.vehicleModel', vehicleDetails.vehicleModel);
+      }
+
       toast({
         title: "Repeat Customer Found!",
         description: `Details for ${vehicleDetails.userName} have been auto-filled.`,
@@ -134,21 +153,17 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
     }
   };
 
-  const engineTypes = useMemo(() => {
-    if (!selectedBrand) return [];
-    return Object.keys(vehicleData[selectedBrand] || {});
-  }, [selectedBrand]);
+  const emissionTypes = Object.keys(vehicleData[selectedBrand] || {});
+  const models = vehicleData[selectedBrand]?.[selectedEmissionType] || [];
 
-  const models = useMemo(() => {
-    if (!selectedBrand || !selectedEngineType) return [];
-    return Object.keys(vehicleData[selectedBrand]?.[selectedEngineType] || {});
-  }, [selectedBrand, selectedEngineType]);
-
-  const ccs = useMemo(() => {
-    if (!selectedBrand || !selectedEngineType || !selectedModel) return [];
-    return vehicleData[selectedBrand]?.[selectedEngineType]?.[selectedModel] || [];
-  }, [selectedBrand, selectedEngineType, selectedModel]);
-
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center h-96">
+            <LoaderCircle className="w-8 h-8 animate-spin text-muted-foreground" />
+            <span className="ml-3 text-muted-foreground">Loading Vehicle Data...</span>
+        </div>
+    )
+  }
 
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
@@ -159,7 +174,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6 p-6">
             <div className="space-y-4 p-4 border rounded-lg">
               <h3 className="font-medium text-lg">Vehicle & Service Details</h3>
@@ -193,13 +208,9 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
                       <FormLabel>Brand</FormLabel>
                         <Select onValueChange={(value) => {
                             field.onChange(value);
-                            setSelectedBrand(value);
-                            form.setValue('vehicleDetails.vehicleModel.engineType', undefined as any);
-                            form.setValue('vehicleDetails.vehicleModel.model', undefined as any);
-                            form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
-                            setSelectedEngineType(undefined);
-                            setSelectedModel(undefined);
-                        }} defaultValue={field.value}>
+                            form.resetField('vehicleDetails.vehicleModel.emissionType');
+                            form.resetField('vehicleDetails.vehicleModel.model');
+                        }} value={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select brand" />
@@ -217,24 +228,21 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
                 />
                  <FormField
                   control={form.control}
-                  name="vehicleDetails.vehicleModel.engineType"
+                  name="vehicleDetails.vehicleModel.emissionType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Engine Type</FormLabel>
+                      <FormLabel>Emission Type</FormLabel>
                         <Select onValueChange={(value) => {
                              field.onChange(value);
-                             setSelectedEngineType(value)
-                             form.setValue('vehicleDetails.vehicleModel.model', undefined as any);
-                             form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
-                             setSelectedModel(undefined);
+                             form.resetField('vehicleDetails.vehicleModel.model');
                         }} value={field.value} disabled={!selectedBrand}>
                             <FormControl>
                                 <SelectTrigger>
-                                <SelectValue placeholder="Select engine type" />
+                                <SelectValue placeholder="Select emission type" />
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                {engineTypes.map(type => (
+                                {emissionTypes.map(type => (
                                     <SelectItem key={type} value={type}>{type}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -249,11 +257,7 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Model</FormLabel>
-                        <Select onValueChange={(value) => {
-                            field.onChange(value);
-                            setSelectedModel(value);
-                             form.setValue('vehicleDetails.vehicleModel.cc', undefined as any);
-                        }} value={field.value} disabled={!selectedEngineType}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedEmissionType}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select model" />
@@ -262,28 +266,6 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
                             <SelectContent>
                                {models.map(model => (
                                     <SelectItem key={model} value={model}>{model}</SelectItem>
-                               ))}
-                            </SelectContent>
-                        </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="vehicleDetails.vehicleModel.cc"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CC</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedModel}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select CC" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                               {ccs.map(cc => (
-                                    <SelectItem key={cc} value={String(cc)}>{cc}cc</SelectItem>
                                ))}
                             </SelectContent>
                         </Select>

@@ -161,7 +161,7 @@ export default function Dashboard({ jobs }: DashboardProps) {
                 <CardTitle>Customer Overview</CardTitle>
                 <CardDescription>A breakdown of new vs. returning customers.</CardDescription>
             </CardHeader>
-            <CardContent className="h-[250px]">
+            <CardContent className="h-[250px] min-w-0">
                <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie

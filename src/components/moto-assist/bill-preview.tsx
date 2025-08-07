@@ -84,7 +84,9 @@ export default function BillPreview({
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const { vehicleDetails, serviceItems } = job;
-  const vehicleModelString = typeof vehicleDetails.vehicleModel === 'string' ? vehicleDetails.vehicleModel : `${vehicleDetails.vehicleModel.brand} ${vehicleDetails.vehicleModel.model}`;
+  const vehicleModelString = typeof vehicleDetails.vehicleModel === 'string' 
+    ? vehicleDetails.vehicleModel 
+    : `${vehicleDetails.vehicleModel.brand} ${vehicleDetails.vehicleModel.model}`;
 
 
   const totalCost = serviceItems.reduce(
@@ -234,18 +236,18 @@ export default function BillPreview({
         </Button>
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 justify-center w-full sm:w-auto">
             {paymentStatus === 'Pending' ? (
-                 <Button onClick={onPendingBill} variant="secondary" className="w-full">
+                 <Button onClick={onPendingBill} variant="secondary" className="w-full sm:w-auto">
                     Bill Pending
                  </Button>
             ) : (
-                <Button onClick={handleConfirmPayment} className="w-full">
+                <Button onClick={handleConfirmPayment} className="w-full sm:w-auto">
                     {paymentStatus === 'Paid - Cash' && <Wallet className="mr-2 h-4 w-4" />}
                     {paymentStatus === 'Paid - Online' && <CreditCard className="mr-2 h-4 w-4" />}
                     Confirm Payment
                 </Button>
             )}
 
-            <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white w-full">
+            <Button onClick={handleShare} className="bg-[#25D366] hover:bg-[#128C7E] text-white w-full sm:w-auto">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Share Bill
             </Button>
         </div>
