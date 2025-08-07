@@ -317,12 +317,26 @@ export default function Home() {
         const payment = { ...job.payment, status: paymentStatus };
         const newStatus = (paymentStatus === 'Paid - Cash' || paymentStatus === 'Paid - Online') ? 'Cycle Complete' : 'Completed';
         
-        await updateDoc(jobRef, { payment, status: newStatus });
+        const updatePayload: Partial<ServiceJob> = { payment, status: newStatus };
+
+        // If there's a nextServiceDate on the job, ensure it's included in the payload
+        // This is the key fix: carry over the date when payment is made.
+        if (job.nextServiceDate) {
+            updatePayload.nextServiceDate = job.nextServiceDate;
+        }
+
+        await updateDoc(jobRef, updatePayload as any);
 
         toast({
           title: "Payment Updated",
           description: `Payment status has been updated.`,
         });
+        
+        // Update local state to reflect the final state
+        setServiceJobs(prevJobs => prevJobs.map(j => 
+            j.id === jobId ? { ...j, ...updatePayload } : j
+        ));
+
         setView('main');
      } catch (error) {
         console.error("Error updating payment: ", error);
