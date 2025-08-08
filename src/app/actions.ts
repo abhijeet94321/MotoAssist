@@ -12,12 +12,15 @@ const ActionInputSchema = z.object({
 export async function getAiSuggestions(input: SuggestServicesInput) {
   const parsedInput = ActionInputSchema.safeParse(input);
   if (!parsedInput.success) {
-    return { error: 'Invalid input. Please provide a valid model and mileage.' };
+    // It's better to return the detailed error from Zod for clearer client-side debugging if needed.
+    const errorMessage = parsedInput.error.errors.map(e => e.message).join(', ');
+    return { error: `Invalid input: ${errorMessage}` };
   }
   
   try {
+    // FIX: Pass the parsedInput.data, not the original input.
     const result = await suggestServices(parsedInput.data);
-    return { suggestions: result.suggestions };
+    return { suggestions: result.suggestedServices };
   } catch (e) {
     console.error(e);
     return { error: 'An unexpected error occurred while getting AI suggestions.' };
