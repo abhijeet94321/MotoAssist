@@ -142,8 +142,26 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
       form.setValue('vehicleDetails.mobile', vehicleDetails.mobile);
       form.setValue('vehicleDetails.address', vehicleDetails.address);
 
-      if (typeof vehicleDetails.vehicleModel !== 'string') {
+      // This is the key fix: handle both object and string for vehicleModel
+      if (typeof vehicleDetails.vehicleModel === 'object' && vehicleDetails.vehicleModel !== null) {
         form.setValue('vehicleDetails.vehicleModel', vehicleDetails.vehicleModel);
+      } else if (typeof vehicleDetails.vehicleModel === 'string') {
+        // Attempt to parse the string format if it exists
+        // This is a simple parsing, might need adjustment based on string format
+        const modelString = vehicleDetails.vehicleModel;
+        for (const brand of Object.keys(vehicleData)) {
+            for (const emissionType in vehicleData[brand]) {
+                const model = vehicleData[brand][emissionType].find(m => modelString.includes(m));
+                if(model) {
+                     form.setValue('vehicleDetails.vehicleModel', {
+                        brand,
+                        emissionType,
+                        model,
+                     });
+                     break;
+                }
+            }
+        }
       }
 
       toast({
