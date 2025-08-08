@@ -9,8 +9,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { z } from 'zod';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ServiceJob } from '@/lib/types';
 
@@ -44,10 +44,13 @@ const findDueServicesFlow = ai.defineFlow(
     const now = new Date();
     
     // Query for completed jobs that have a nextServiceDate set for today or in the past
+    // The '!=' null check is important for Firestore indexing when combining with another inequality.
     const q = query(
         collection(db, "serviceJobs"), 
         where("status", "==", "Cycle Complete"),
-        where("nextServiceDate", "<=", now.toISOString())
+        where("nextServiceDate", "!=", null), 
+        where("nextServiceDate", "<=", now.toISOString()),
+        orderBy("nextServiceDate")
     );
 
     const querySnapshot = await getDocs(q);
