@@ -142,25 +142,27 @@ export default function ServiceIntakeForm({ onSubmit, onBack, initialData, exist
       form.setValue('vehicleDetails.mobile', vehicleDetails.mobile);
       form.setValue('vehicleDetails.address', vehicleDetails.address);
 
-      // This is the key fix: handle both object and string for vehicleModel
+      // Handle both object and string formats for vehicleModel
       if (typeof vehicleDetails.vehicleModel === 'object' && vehicleDetails.vehicleModel !== null) {
-        form.setValue('vehicleDetails.vehicleModel', vehicleDetails.vehicleModel);
+        // New format: vehicleModel is an object
+        // Use a timeout to ensure state updates sequentially
+        setTimeout(() => {
+            form.setValue('vehicleDetails.vehicleModel.brand', vehicleDetails.vehicleModel.brand, { shouldValidate: true });
+            setTimeout(() => {
+                form.setValue('vehicleDetails.vehicleModel.emissionType', vehicleDetails.vehicleModel.emissionType, { shouldValidate: true });
+                 setTimeout(() => {
+                    form.setValue('vehicleDetails.vehicleModel.model', vehicleDetails.vehicleModel.model, { shouldValidate: true });
+                }, 0);
+            }, 0);
+        }, 0);
+
       } else if (typeof vehicleDetails.vehicleModel === 'string') {
-        // Attempt to parse the string format if it exists
-        // This is a simple parsing, might need adjustment based on string format
-        const modelString = vehicleDetails.vehicleModel;
-        for (const brand of Object.keys(vehicleData)) {
-            for (const emissionType in vehicleData[brand]) {
-                const model = vehicleData[brand][emissionType].find(m => modelString.includes(m));
-                if(model) {
-                     form.setValue('vehicleDetails.vehicleModel', {
-                        brand,
-                        emissionType,
-                        model,
-                     });
-                     break;
-                }
-            }
+        // Old format: vehicleModel is a string. We can't reliably parse it,
+        // but we can try to find the brand.
+        const modelString = vehicleDetails.vehicleModel.toLowerCase();
+        const foundBrand = Object.keys(vehicleData).find(brand => modelString.includes(brand.toLowerCase()));
+        if (foundBrand) {
+            form.setValue('vehicleDetails.vehicleModel.brand', foundBrand);
         }
       }
 
