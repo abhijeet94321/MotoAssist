@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ServiceJob } from '@/lib/types';
 
@@ -49,7 +49,7 @@ const findDueServicesFlow = ai.defineFlow(
         collection(db, "serviceJobs"), 
         where("status", "==", "Cycle Complete"),
         where("nextServiceDate", "!=", null), 
-        where("nextServiceDate", "<=", now.toISOString()),
+        where("nextServiceDate", "<=", now), // Use the Date object directly
         orderBy("nextServiceDate")
     );
 
@@ -64,13 +64,18 @@ const findDueServicesFlow = ai.defineFlow(
             : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
 
         if (job.nextServiceDate) {
+            // Convert Firestore Timestamp to ISO string for consistent serialization
+            const nextServiceDate = (job.nextServiceDate as any).toDate 
+                ? (job.nextServiceDate as any).toDate().toISOString() 
+                : job.nextServiceDate;
+
             dueServices.push({
                 jobId: job.id,
                 userName: job.vehicleDetails.userName,
                 mobile: job.vehicleDetails.mobile,
                 licensePlate: job.vehicleDetails.licensePlate,
                 vehicleModel: vehicleModelString,
-                nextServiceDate: job.nextServiceDate,
+                nextServiceDate: nextServiceDate,
             });
         }
     });
