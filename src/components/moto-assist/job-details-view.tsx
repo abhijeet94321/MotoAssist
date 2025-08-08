@@ -151,3 +151,5 @@ export default function JobDetailsView({ job, onBack }: JobDetailsViewProps) {
     </Card>
   );
 }
+
+    
