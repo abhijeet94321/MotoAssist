@@ -77,7 +77,8 @@ export default function ServiceStatusUpdater({
 
         let nextServiceDate: string | undefined = undefined;
         if (currentStatus === 'Completed' && parseInt(reminderMonths) > 0) {
-            const date = new Date();
+            // Corrected: Use the job's intakeDate as the base, not the current date.
+            const date = new Date(job.intakeDate);
             date.setMonth(date.getMonth() + parseInt(reminderMonths));
             nextServiceDate = date.toISOString();
         }
@@ -125,7 +126,8 @@ export default function ServiceStatusUpdater({
 
             let nextServiceDate: string | undefined = undefined;
             if (nextStatus === 'Completed' && parseInt(reminderMonths) > 0) {
-                const date = new Date();
+                // Corrected: Use the job's intakeDate as the base, not the current date.
+                const date = new Date(job.intakeDate);
                 date.setMonth(date.getMonth() + parseInt(reminderMonths));
                 nextServiceDate = date.toISOString();
             }
