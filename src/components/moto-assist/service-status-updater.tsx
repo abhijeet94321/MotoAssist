@@ -34,7 +34,7 @@ import { Separator } from "../ui/separator";
 type ServiceStatusUpdaterProps = {
   job: ServiceJob;
   mechanics: Mechanic[];
-  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string, nextServiceDate?: string) => void;
+  onUpdate: (jobId: string, status: ServiceStatus, items?: ServiceItem[], mechanic?: string, nextServiceDate?: Date) => void;
   onBack: () => void;
 };
 
@@ -75,12 +75,11 @@ export default function ServiceStatusUpdater({
             return;
         }
 
-        let nextServiceDate: string | undefined = undefined;
+        let nextServiceDate: Date | undefined = undefined;
         if (currentStatus === 'Completed' && parseInt(reminderMonths) > 0) {
-            // Corrected: Use the job's intakeDate as the base, not the current date.
             const date = new Date(job.intakeDate);
             date.setMonth(date.getMonth() + parseInt(reminderMonths));
-            nextServiceDate = date.toISOString();
+            nextServiceDate = date;
         }
 
         onUpdate(job.id, currentStatus, serviceItems, assignedMechanic, nextServiceDate);
@@ -124,12 +123,11 @@ export default function ServiceStatusUpdater({
                 return;
             }
 
-            let nextServiceDate: string | undefined = undefined;
+            let nextServiceDate: Date | undefined = undefined;
             if (nextStatus === 'Completed' && parseInt(reminderMonths) > 0) {
-                // Corrected: Use the job's intakeDate as the base, not the current date.
                 const date = new Date(job.intakeDate);
                 date.setMonth(date.getMonth() + parseInt(reminderMonths));
-                nextServiceDate = date.toISOString();
+                nextServiceDate = date;
             }
 
             onUpdate(job.id, nextStatus, serviceItems, assignedMechanic, nextServiceDate);

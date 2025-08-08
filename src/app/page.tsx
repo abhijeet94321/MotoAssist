@@ -82,7 +82,17 @@ export default function Home() {
     const unsubscribeJobs = onSnapshot(jobsQuery, (querySnapshot) => {
       const jobs: ServiceJob[] = [];
       querySnapshot.forEach((doc) => {
-        jobs.push({ id: doc.id, ...doc.data() } as ServiceJob);
+        const data = doc.data();
+        // Convert Firestore Timestamps to ISO strings
+        const intakeDate = data.intakeDate?.toDate ? data.intakeDate.toDate().toISOString() : data.intakeDate;
+        const nextServiceDate = data.nextServiceDate?.toDate ? data.nextServiceDate.toDate().toISOString() : data.nextServiceDate;
+        
+        jobs.push({ 
+            id: doc.id, 
+            ...data,
+            intakeDate,
+            nextServiceDate
+        } as ServiceJob);
       });
       setServiceJobs(jobs);
       setLoading(false);
@@ -160,13 +170,13 @@ export default function Home() {
       serviceItems: [],
       payment: { status: 'Pending' },
       isRepeat: isRepeatCustomer,
-      intakeDate: new Date().toISOString(),
+      intakeDate: new Date(),
       mechanic: '',
     };
     
     try {
       const docRef = await addDoc(collection(db, 'serviceJobs'), newJobData);
-      const newJob: ServiceJob = { ...newJobData, id: docRef.id };
+      const newJob: ServiceJob = { ...newJobData, id: docRef.id, intakeDate: (newJobData.intakeDate as Date).toISOString() };
       
       // Set job for confirmation instead of sending message directly
       setPendingJobForConfirmation(newJob);
@@ -232,7 +242,7 @@ export default function Home() {
     setView('update_status');
   };
 
-  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string, nextServiceDate?: string) => {
+  const handleStatusUpdate = async (jobId: string, status: ServiceJob['status'], items?: ServiceJob['serviceItems'], mechanic?: string, nextServiceDate?: Date) => {
     const jobRef = doc(db, 'serviceJobs', jobId);
     const originalJob = serviceJobs.find(j => j.id === jobId);
     if (!originalJob) {
@@ -243,14 +253,16 @@ export default function Home() {
     const updateData: Partial<ServiceJob> = { status };
     if (items) updateData.serviceItems = items;
     if (mechanic !== undefined) updateData.mechanic = mechanic;
-    if (nextServiceDate) updateData.nextServiceDate = nextServiceDate;
+    if (nextServiceDate) updateData.nextServiceDate = nextServiceDate as any;
     
     try {
       await updateDoc(jobRef, updateData as any);
       
       const updatedJob: ServiceJob = {
         ...originalJob,
-        ...updateData
+        ...updateData,
+        // Convert date back to string for local state if it exists
+        nextServiceDate: nextServiceDate ? nextServiceDate.toISOString() : originalJob.nextServiceDate,
       };
 
       // Update the local state so the UI reflects the change immediately.
@@ -321,7 +333,7 @@ export default function Home() {
         // If there's a nextServiceDate on the job, ensure it's included in the payload
         // This is the key fix: carry over the date when payment is made.
         if (job.nextServiceDate) {
-            updatePayload.nextServiceDate = job.nextServiceDate;
+            updatePayload.nextServiceDate = job.nextServiceDate as any;
         }
 
         await updateDoc(jobRef, updatePayload as any);
@@ -450,7 +462,7 @@ export default function Home() {
           return (
             <ServiceStatusUpdater
               job={activeJob}
-              onUpdate={handleStatusUpdate}
+              onUpdate={handleStatusUpdate as any}
               onBack={handleBackToMain}
               mechanics={mechanics}
             />
@@ -562,11 +574,11 @@ export default function Home() {
                  <div className="flex items-center justify-between gap-3 p-2 rounded-lg bg-accent/50">
                      <div className="flex items-center gap-2">
                          <Avatar className="h-9 w-9">
-                             <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                             <AvatarFallback>{user.phoneNumber?.[0].toUpperCase() || 'U'}</AvatarFallback>
                          </Avatar>
                          <div className="text-sm">
                              <div className="flex items-center gap-2">
-                                 <p className="font-medium text-foreground truncate">{user.email}</p>
+                                 <p className="font-medium text-foreground truncate">{user.phoneNumber}</p>
                                  {isAdmin && <Badge>Admin</Badge>}
                              </div>
                              <Button variant="link" className="p-0 h-auto text-xs" onClick={signOut}>
