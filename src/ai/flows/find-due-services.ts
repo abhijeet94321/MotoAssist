@@ -14,7 +14,6 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ServiceJob } from '@/lib/types';
 
-
 const DueServiceSchema = z.object({
   jobId: z.string().describe('The ID of the service job.'),
   userName: z.string().describe('The name of the customer.'),
