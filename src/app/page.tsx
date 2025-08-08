@@ -5,7 +5,7 @@ import type { ServiceJob, Mechanic } from '@/lib/types';
 import Dashboard from '@/components/moto-assist/dashboard';
 import ServiceJobsList from '@/components/moto-assist/service-jobs-list';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, Database, Send, Trash2 } from 'lucide-react';
+import { PlusCircle, Cog, LayoutDashboard, List, IndianRupee, History, Settings, LogOut, Database, Send, Trash2, BellRing } from 'lucide-react';
 import ServiceIntakeForm from '@/components/moto-assist/service-intake-form';
 import ServiceStatusUpdater from '@/components/moto-assist/service-status-updater';
 import BillPreview from '@/components/moto-assist/bill-preview';
@@ -15,6 +15,7 @@ import PaymentsList from '@/components/moto-assist/payments-list';
 import HistoryList from '@/components/moto-assist/history-list';
 import JobDetailsView from '@/components/moto-assist/job-details-view';
 import MechanicSettings from '@/components/moto-assist/mechanic-settings';
+import ServiceReminders from '@/components/moto-assist/service-reminders';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import {
@@ -256,6 +257,8 @@ export default function Home() {
       setServiceJobs(prevJobs => prevJobs.map(job => 
         job.id === jobId ? updatedJob : job
       ));
+      
+      setActiveJob(updatedJob);
 
       // Automatically trigger WhatsApp message on status change, except for 'Service Required'
       if (originalJob.status !== status && status !== 'Service Required') {
@@ -482,6 +485,7 @@ export default function Home() {
               <TabsTrigger value="jobs"><List className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Ongoing</span></TabsTrigger>
               <TabsTrigger value="payments"><IndianRupee className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Payments</span></TabsTrigger>
               <TabsTrigger value="history"><History className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">History</span></TabsTrigger>
+              <TabsTrigger value="reminders"><BellRing className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Reminders</span></TabsTrigger>
               <TabsTrigger value="settings"><Settings className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Settings</span></TabsTrigger>
               {isAdmin && <TabsTrigger value="vehicleData"><Database className="mr-0 sm:mr-2 h-4 w-4" /><span className="hidden sm:inline">Vehicle Data</span></TabsTrigger>}
             </TabsList>
@@ -506,6 +510,9 @@ export default function Home() {
                   onViewDetails={handleViewDetails}
                   onDelete={handleDeleteJob}
                 />
+            </TabsContent>
+            <TabsContent value="reminders">
+                <ServiceReminders />
             </TabsContent>
             <TabsContent value="settings">
                <MechanicSettings
