@@ -39,7 +39,8 @@ const suggestServicesPrompt = ai.definePrompt({
 Vehicle Model: {{{vehicleModel}}}
 Mileage: {{{mileage}}}
 
-Consider services like oil changes, tire rotations, brake inspections, fluid checks, and filter replacements. Return just the array of strings.
+Consider services like oil changes, tire rotations, brake inspections, fluid checks, and filter replacements.
+Return the response as a JSON object with a single key "suggestedServices" which contains an array of strings. For example: { "suggestedServices": ["Oil Change", "Tire Rotation"] }
 `,
 });
 
