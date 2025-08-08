@@ -24,9 +24,25 @@ const SuggestServicesOutputSchema = z.object({
 });
 export type SuggestServicesOutput = z.infer<typeof SuggestServicesOutputSchema>;
 
+
 export async function suggestServices(input: SuggestServicesInput): Promise<SuggestServicesOutput> {
   return suggestServicesFlow(input);
 }
+
+// Define the prompt once, outside the flow.
+const suggestServicesPrompt = ai.definePrompt({
+    name: 'suggestServicesPrompt',
+    input: {schema: SuggestServicesInputSchema},
+    output: {schema: SuggestServicesOutputSchema},
+    prompt: `You are an experienced mechanic. Based on the vehicle model and mileage provided, suggest common service tasks that might be due.
+
+Vehicle Model: {{{vehicleModel}}}
+Mileage: {{{mileage}}}
+
+Consider services like oil changes, tire rotations, brake inspections, fluid checks, and filter replacements. Return just the array of strings.
+`,
+});
+
 
 const suggestServicesFlow = ai.defineFlow(
   {
@@ -35,20 +51,7 @@ const suggestServicesFlow = ai.defineFlow(
     outputSchema: SuggestServicesOutputSchema,
   },
   async input => {
-    const prompt = ai.definePrompt({
-        name: 'suggestServicesPrompt',
-        input: {schema: SuggestServicesInputSchema},
-        output: {schema: SuggestServicesOutputSchema},
-        prompt: `You are an experienced mechanic. Based on the vehicle model and mileage provided, suggest common service tasks that might be due.
-
-Vehicle Model: {{{vehicleModel}}}
-Mileage: {{{mileage}}}
-
-Consider services like oil changes, tire rotations, brake inspections, fluid checks, and filter replacements.  Return the output in JSON format.
-`,
-    });
-
-    const {output} = await prompt(input);
+    const {output} = await suggestServicesPrompt(input);
     return output!;
   }
 );
