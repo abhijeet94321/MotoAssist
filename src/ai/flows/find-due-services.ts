@@ -43,13 +43,11 @@ const findDueServicesFlow = ai.defineFlow(
   async () => {
     const now = new Date();
     
-    // Query for completed jobs that have a nextServiceDate set for today or in the past
-    // The '!=' null check is important for Firestore indexing when combining with another inequality.
     const q = query(
         collection(db, "serviceJobs"), 
         where("status", "==", "Cycle Complete"),
         where("nextServiceDate", "!=", null), 
-        where("nextServiceDate", "<=", now), // Use the Date object directly
+        where("nextServiceDate", "<=", now),
         orderBy("nextServiceDate")
     );
 
@@ -64,18 +62,16 @@ const findDueServicesFlow = ai.defineFlow(
             : `${job.vehicleDetails.vehicleModel.brand} ${job.vehicleDetails.vehicleModel.model}`;
 
         if (job.nextServiceDate) {
-            // Convert Firestore Timestamp to ISO string for consistent serialization
-            const nextServiceDate = (job.nextServiceDate as any).toDate 
-                ? (job.nextServiceDate as any).toDate().toISOString() 
-                : job.nextServiceDate;
-
+            // Firestore timestamps need to be converted to JS Dates, then to ISO strings.
+            const date = (job.nextServiceDate as unknown as Timestamp).toDate();
+            
             dueServices.push({
                 jobId: job.id,
                 userName: job.vehicleDetails.userName,
                 mobile: job.vehicleDetails.mobile,
                 licensePlate: job.vehicleDetails.licensePlate,
                 vehicleModel: vehicleModelString,
-                nextServiceDate: nextServiceDate,
+                nextServiceDate: date.toISOString(),
             });
         }
     });
